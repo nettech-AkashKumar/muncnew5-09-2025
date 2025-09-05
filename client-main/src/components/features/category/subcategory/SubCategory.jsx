@@ -211,7 +211,7 @@ const SubCategory = () => {
   };
 
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper" style={{marginTop:'60px'}}>
       <div className="content">
         <div className="page-header">
           <div className="add-item d-flex">
