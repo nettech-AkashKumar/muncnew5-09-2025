@@ -81,10 +81,10 @@ const warehouseSchema = new mongoose.Schema(
         required: true
      },
      layout: {
-    rows: { type: Number },
-    columns: { type: Number },
+    rows: { type: Number , required:true},
+    columns: { type: Number , required: true },
     width: { type: String },
-    zones: { type: String }
+    zones: { type: String , required: true}
   },
     //   status: { type: Boolean, default: true },
     status: {
