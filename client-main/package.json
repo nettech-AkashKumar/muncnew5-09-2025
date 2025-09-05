@@ -58,6 +58,7 @@
     "react-select2": "^4.0.3",
     "react-toastify": "^11.0.5",
     "reactjs-popup": "^2.0.6",
+    "sanitize-html": "^2.17.0",
     "select2": "^4.1.0-rc.0",
     "simplebar": "^6.3.0",
     "simplebar-react": "^3.3.0",
