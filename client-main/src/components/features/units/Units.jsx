@@ -10,6 +10,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import DeleteAlert from "../../../utils/sweetAlert/DeleteAlert";
 import Swal from "sweetalert2";
+import { sanitizeInput } from "../../../utils/sanitize.js";
 
 const Units = () => {
   const [unitData, setUnitData] = useState([]);
@@ -18,9 +19,27 @@ const Units = () => {
   const [unitsName, setUnitsName] = useState("");
   const [shortName, setShortName] = useState("");
   const [status, setStatus] = useState(true); // true = Active
+  const [errors, setErrors] = useState({})
+
+  const unitNameRegex = /^[A-Za-z\s]{2,50}$/;   
+  const shortNameRegex = /^[A-Za-z]{1,10}$/; 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+        let newErrors = {};
+    // validate unit Name
+    if(!unitNameRegex.test(unitsName)) {
+      newErrors.unitsName = "Unit name must be 2–50 letters only.";
+    }
+    if(!shortNameRegex.test(shortName)) {
+      newErrors.shortName = "Short name must be 1–10 letters only.";
+    }
+
+    if(Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
 
     const formData = {
       unitsName,
@@ -405,7 +424,7 @@ const Units = () => {
         </div>
       </div> */}
 
-      <div className="modal fade" id="add-units">
+      <div className="modal" id="add-units">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form onSubmit={handleSubmit}>
@@ -432,6 +451,7 @@ const Units = () => {
                     onChange={(e) => setUnitsName(e.target.value)}
                     required
                   />
+                   {errors.unitsName && <p className="text-danger">{errors.unitsName}</p>}
                 </div>
                 <div className="mb-3">
                   <label className="form-label">
@@ -444,6 +464,7 @@ const Units = () => {
                     onChange={(e) => setShortName(e.target.value)}
                     required
                   />
+                   {errors.shortName && <p className="text-danger">{errors.shortName}</p>}
                 </div>
                 <div className="mb-0">
                   <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
@@ -545,7 +566,7 @@ const Units = () => {
           </div>
         </div>
       </div> */}
-      <EditUnitModal selectedUnit={selectedUnit} onUnitUpdated={fetchUnits} />
+      <EditUnitModal selectedUnit={selectedUnit} onUnitUpdated={fetchUnits} errors={errors} />
       {/* /Edit Unit */}
     </div>
   );

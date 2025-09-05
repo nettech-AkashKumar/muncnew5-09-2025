@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import BASE_URL from "../../config/config";
 
-const EditUnitModal = ({ selectedUnit, onUnitUpdated }) => {
+const EditUnitModal = ({ selectedUnit, onUnitUpdated, errors={} }) => {
   const [unitsName, setUnitsName] = useState("");
   const [shortName, setShortName] = useState("");
   const [status, setStatus] = useState(true);
@@ -38,7 +38,7 @@ const EditUnitModal = ({ selectedUnit, onUnitUpdated }) => {
   
 
   return (
-    <div className="modal fade" id="edit-units">
+    <div className="modal" id="edit-units">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
@@ -67,6 +67,7 @@ const EditUnitModal = ({ selectedUnit, onUnitUpdated }) => {
                   onChange={(e) => setUnitsName(e.target.value)}
                   required
                 />
+                {errors.unitsName && <p className="text-danger">{errors.unitsName}</p>}
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -79,6 +80,7 @@ const EditUnitModal = ({ selectedUnit, onUnitUpdated }) => {
                   onChange={(e) => setShortName(e.target.value)}
                   required
                 />
+                {errors.shortName && <p className="text-danger">{errors.shortName}</p>}
               </div>
               <div className="mb-0">
                 <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
