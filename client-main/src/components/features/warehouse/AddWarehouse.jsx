@@ -1831,7 +1831,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Warehouse Name
+                Warehouse Name <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -1867,7 +1867,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Contact No
+                Contact No <span className="text-danger">*</span>
               </label>
               <input
                 // type="number"
@@ -1907,7 +1907,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Warehouse Code
+                Warehouse Code <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -1943,7 +1943,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Warehouse Contact Person(Manager)
+                Warehouse Contact Person(Manager) <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -1980,7 +1980,7 @@ function AddWarehouse() {
                 display: "block",
               }}
             >
-              Address
+              Address <span className="text-danger">*</span>
             </label>
             <textarea
               value={address}
@@ -2018,7 +2018,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Country
+                Country <span className="text-danger">*</span>
               </label>
               <select
                 value={selectedCountry}
@@ -2065,7 +2065,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                State
+                State <span className="text-danger">*</span>
               </label>
               <select
                 value={selectedState}
@@ -2111,7 +2111,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                City
+                City <span className="text-danger">*</span>
               </label>
               <select
                 // value={city}
@@ -2149,7 +2149,7 @@ function AddWarehouse() {
                   display: "block",
                 }}
               >
-                Pin Code
+                Pin Code <span className="text-danger">*</span>
               </label>
 
               <input
@@ -2332,7 +2332,7 @@ function AddWarehouse() {
                               fontSize: "16px",
                             }}
                           >
-                            No. of Zones
+                            No. of Zones <span className="text-danger">*</span>
                           </label>
                           <input
                             type="number"
@@ -2373,7 +2373,7 @@ function AddWarehouse() {
                                 display: "block",
                               }}
                             >
-                              Row
+                              Row <span className="text-danger">*</span>
                             </label>
                             <input
                               type="number"
@@ -2407,7 +2407,7 @@ function AddWarehouse() {
                                 display: "block",
                               }}
                             >
-                              Column
+                              Column <span className="text-danger">*</span>
                             </label>
                             <input
                               type="number"
