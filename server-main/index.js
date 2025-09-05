@@ -62,7 +62,8 @@ const app = express();
 
 // ✅ Middleware
 const corsOptions = {
-  origin: ["https://kasperinfotech.io"],
+  // origin: ["https://kasperinfotech.io"],
+  origin:["http://localhost:3000", "http://localhost:3001"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"],
   credentials: true,
 };
@@ -132,12 +133,12 @@ app.use('/api/credit-notes', creditNoteRoutes);
 // // ✅ Frontend build (React/Vite)
 
 
-const buildPath = path.join(__dirname, '../client/dist');
+// const buildPath = path.join(__dirname, '../client/dist');
 
-app.use(express.static(buildPath));
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
-});
+// app.use(express.static(buildPath));
+// app.get(/.*/, (req, res) => {
+//   res.sendFile(path.join(buildPath, 'index.html'));
+// });
 
 
 
