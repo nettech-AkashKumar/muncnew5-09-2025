@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 
 const CategoryModal = ({
   modalId,
@@ -10,19 +10,23 @@ const CategoryModal = ({
   onSlugChange,
   onSubmit,
   submitLabel = "Submit",
+  errors={}
 }) => {
+
+  
   return (
-    <div className="modal fade" id={modalId} tabIndex="-1" aria-hidden="true">
+    <div className="modal" id={modalId} tabIndex="-1" aria-hidden="true">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header">
+          <div className="modal-header" style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
             <h5 className="modal-title">{title}</h5>
             <button
               type="button"
-              className="btn-close"
+              className=""
               data-bs-dismiss="modal"
               aria-label="Close"
-            ></button>
+              style={{color:'white', backgroundColor:'red', borderRadius:'50%'}}
+            >x</button>
           </div>
 
           <form onSubmit={onSubmit}>
@@ -38,6 +42,9 @@ const CategoryModal = ({
                   onChange={onCategoryChange}
                   required
                 />
+                {errors.categoryName && (
+                  <p className="text-danger">{errors.categoryName}</p>
+                )}
               </div>
 
               <div className="mb-3">
@@ -51,6 +58,9 @@ const CategoryModal = ({
                   onChange={onSlugChange}
                   required
                 />
+                {errors.categorySlug && (
+                  <p className="text-danger">{errors.categorySlug}</p>
+                )}
               </div>
             </div>
 
