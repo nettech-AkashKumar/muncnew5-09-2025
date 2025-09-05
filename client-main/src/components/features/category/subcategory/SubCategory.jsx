@@ -6,7 +6,7 @@ import BASE_URL from "../../../../pages/config/config";
 import Select from "react-select";
 import { CiCirclePlus } from "react-icons/ci";
 import { FiXSquare } from "react-icons/fi";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify"     
 
 const SubCategory = () => {
   const [categories, setCategories] = useState([]);
