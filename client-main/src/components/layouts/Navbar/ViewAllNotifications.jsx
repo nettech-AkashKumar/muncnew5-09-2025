@@ -279,7 +279,7 @@ const ViewAllNotifications = () => {
 
   return (
     <div className='page-wrapper' 
-    // style={{ padding: '0px 20px', height: '88vh' }}
+    style={{ padding: '0px 20px', height: '88vh', marginTop:'90px' }}
     >
       <style>
         {`
@@ -364,7 +364,7 @@ const ViewAllNotifications = () => {
         )}
       </div>
 
-      <div style={{ marginTop: '5px', overflowY: 'auto', maxHeight: 'calc(100vh - 160px)', borderRadius: '8px', backgroundColor: 'white' }}>
+      <div style={{ marginTop: '5px', overflowY: 'auto', maxHeight: 'cal(100vh - 260px)', borderRadius: '8px', backgroundColor: 'white' }}>
         {!user ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: '#6c757d' }}>
             <FaBell style={{ fontSize: '48px', color: '#dee2e6', marginBottom: '16px' }} />
@@ -372,14 +372,14 @@ const ViewAllNotifications = () => {
             <p style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>Please log in to view notifications</p>
           </div>
         ) : loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px',height:'80vh' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #667eea', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
               <p style={{ color: '#6c757d' }}>Loading notifications...</p>
             </div>
           </div>
         ) : error ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: '#6c757d' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: '#6c757d',height:'80vh' }}>
             <FaBell style={{ fontSize: '48px', color: '#dee2e6', marginBottom: '16px' }} />
             <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#495057' }}>Error loading notifications</h3>
             <p style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>{error}</p>
@@ -401,7 +401,7 @@ const ViewAllNotifications = () => {
             </button>
           </div>
         ) : notifications.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: '#6c757d' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: '#6c757d',height:'80vh' }}>
             <FaBell style={{ fontSize: '48px', color: '#dee2e6', marginBottom: '16px' }} />
             <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#495057' }}>No notifications</h3>
             <p style={{ margin: 0, fontSize: '14px', color: '#6c757d' }}>You're all caught up! No new notifications.</p>
