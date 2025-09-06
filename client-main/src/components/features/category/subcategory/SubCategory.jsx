@@ -6,18 +6,28 @@ import BASE_URL from "../../../../pages/config/config";
 import Select from "react-select";
 import { CiCirclePlus } from "react-icons/ci";
 import { FiXSquare } from "react-icons/fi";
-import { toast } from "react-toastify"     
+import { toast } from "react-toastify";
+import { sanitizeInput } from "../../../../utils/sanitize";
+import axios from "axios";
+
 
 const SubCategory = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [subCategoryName, setSubCategoryName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState(true);
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [editingSubCategory, setEditingSubCategory] = useState(null);
+
+  const [errors, setErrors] = useState({});
+  const nameRegex = /^[A-Za-z]{2,}$/;
 
   const fetchCategories = async () => {
     try {
@@ -28,6 +38,8 @@ const SubCategory = () => {
       const options = data.map((category) => ({
         value: category._id, // or category.categoryName
         label: category.categoryName,
+        code: category.categoryCode,
+        original: category,
       }));
 
       setCategories(options);
@@ -55,6 +67,13 @@ const SubCategory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    let newErrors = {};
+    if (!nameRegex.test(subCategoryName)) {
+      newErrors.subCategoryName =
+        "Enter a valid subcategory name (letters only, min 2 chars)";
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     try {
       if (!selectedCategory || !subCategoryName || !description) {
@@ -62,9 +81,13 @@ const SubCategory = () => {
         return;
       }
 
+      // Sanitize before sending
+      const cleanName = sanitizeInput(subCategoryName);
+      const cleanDescription = sanitizeInput(description);
+
       const formData = new FormData();
-      formData.append("subCategoryName", subCategoryName);
-      formData.append("description", description);
+      formData.append("subCategoryName", cleanName);
+      formData.append("description", cleanDescription);
       formData.append("status", status);
 
       images.forEach((file) => formData.append("images", file));
@@ -112,8 +135,83 @@ const SubCategory = () => {
       console.error("Failed to load subcategories:", error);
     }
   };
+
+  const filteredSubCategories = subcategories.filter(
+    (subcat) =>
+      subcat.subCategoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (subcat.description &&
+        subcat.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedSubCategories = filteredSubCategories.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const totalPages = Math.ceil(filteredSubCategories.length / itemsPerPage);
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    let newErrors = {};
+    if (!nameRegex.test(editingSubCategory?.subCategoryName)) {
+      newErrors.subCategoryName =
+        "Enter a valid subcategory name (letters only min 2 chars)";
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      const cleanName = sanitizeInput(editingSubCategory.subCategoryName);
+      const cleanDescription = sanitizeInput(editingSubCategory.description);
+
+    const formData = new FormData();
+    formData.append("subCategoryName", cleanName);
+    formData.append("description", cleanDescription);
+    formData.append("status", editingSubCategory.status);
+    formData.append(
+      "categoryId",
+      editingSubCategory.category?._id || editingSubCategory.categoryId
+    );
+
+    if (images.length > 0) {
+  images.forEach((file) => formData.append("images", file));
+}
+
+
+      const res = await axios.put(
+        `${BASE_URL}/api/subcategory/subcategory/${editingSubCategory._id}`,
+        formData
+      );
+      toast.success("Subcategory updated successfully!");
+      fetchSubcategories();
+      window.$("#edit-category").modal("hide");
+    } catch (error) {
+      toast.error(error.message || "Failed to update subcategory");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this subcategory?")) {
+      return;
+    }
+    try {
+      const res = await axios.delete(
+        `${BASE_URL}/api/subcategory/subcategories/${id}`
+      );
+      toast.success(res.data.message || "Subcategory deleted successfully");
+      fetchSubcategories();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete subcategory"
+      );
+    }
+  };
+
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper" style={{marginTop:'60px'}}>
       <div className="content">
         <div className="page-header">
           <div className="add-item d-flex">
@@ -157,13 +255,20 @@ const SubCategory = () => {
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
             <div className="search-set">
               <div className="search-input">
+                <input
+                  type="text"
+                  placeholder="Search subcategory..."
+                  className="form-control"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
                 <span className="btn-searchset">
                   <i className="ti ti-search fs-14 feather-search" />
                 </span>
               </div>
             </div>
             <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div className="dropdown me-2">
+              {/* <div className="dropdown me-2">
                 <a
                   href="javascript:void(0);"
                   className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
@@ -205,7 +310,7 @@ const SubCategory = () => {
                     </a>
                   </li>
                 </ul>
-              </div>
+              </div> */}
               <div className="dropdown">
                 <a
                   href="javascript:void(0);"
@@ -239,7 +344,7 @@ const SubCategory = () => {
             <div className="table-responsive">
               <table className="table datatable">
                 <thead className="thead-light">
-                  <tr>
+                  <tr style={{ textAlign: "center" }}>
                     <th className="no-sort">
                       <label className="checkboxs">
                         <input type="checkbox" id="select-all" />
@@ -251,14 +356,14 @@ const SubCategory = () => {
                     <th>Category</th>
                     <th>Sub Category</th>
                     <th>Description</th>
-                    {/* <th>Status</th> */}
-                    <th className="no-sort" />
+                    <th>Action</th>
+                    {/* <th className="no-sort" /> */}
                   </tr>
                 </thead>
                 <tbody>
-                  {subcategories.length > 0 ? (
-                    subcategories.map((subcat) => (
-                      <tr>
+                  {paginatedSubCategories.length > 0 ? (
+                    paginatedSubCategories.map((subcat) => (
+                      <tr style={{ textAlign: "center" }}>
                         <td>
                           <label className="checkboxs">
                             <input type="checkbox" />
@@ -293,11 +398,15 @@ const SubCategory = () => {
                             <a
                               className="me-2 p-2"
                               data-bs-toggle="modal"
-                              data-bs-target="#edit-country"
+                              data-bs-target="#edit-category"
+                              onClick={() => setEditingSubCategory(subcat)}
                             >
                               <TbEdit />
                             </a>
-                            <a className="p-2" >
+                            <a
+                              className="p-2"
+                              onClick={() => handleDelete(subcat._id)}
+                            >
                               <TbTrash />
                             </a>
                           </div>
@@ -314,11 +423,62 @@ const SubCategory = () => {
                 </tbody>
               </table>
             </div>
+            <div className="d-flex justify-content-between align-items-center p-3">
+              <div className="d-flex justify-content-end align-items-center">
+                <label className="me-2">Items per page:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1); // reset to first page
+                  }}
+                  className="form-select w-auto"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              <div>
+                <button
+                  className="btn btn-light btn-sm me-2"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`btn btn-sm me-1 ${
+                      currentPage === i + 1
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-light btn-sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         {/* /product list */}
         {/* addd */}
-        <div className="modal fade" id="add-category">
+        <div className="modal" id="add-category">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -336,56 +496,53 @@ const SubCategory = () => {
               </div>
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
-                  <div className="mb-3">
-                    {/* <div className="add-image-upload">
-                      <div className="add-image">
-                        <span className="fw-normal">
-                          <i
-                            data-feather="plus-circle"
-                            className="plus-down-add"
-                          />{" "}
-                          Add Image
-                        </span>
-                      </div>
-                      <div className="new-employee-field">
-                        <div className="mb-0">
-                          <div className="image-upload mb-2">
-                            <input type="file" />
-                            <div className="image-uploads">
-                              <h4 className="fs-13 fw-medium">Upload Image</h4>
-                            </div>
-                          </div>
-                          <span>JPEG, PNG up to 2 MB</span>
-                        </div>
-                      </div>
-                    </div> */}
-                    <div className="add-choosen">
-                      <div className="mb-3">
-                        <div className="image-upload image-upload-two">
-                          <input
-                            type="file"
-                            multiple
-                            onChange={handleImageChange}
-                          />
-                          <div className="image-uploads">
-                            <CiCirclePlus className="plus-down-add me-0" />
-                            <h4>Add Images</h4>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="phone-img">
-                        {imagePreviews.map((src, index) => (
+                  {/* Image Upload Section */}
+                  <div className="profile-pic-upload mb-3">
+                    <div className="profile-pic brand-pic">
+                      <span>
+                        {images.length > 0 ? (
                           <img
-                            key={index}
-                            src={src}
-                            alt="preview"
-                            // style={{ width: "80px", height: "80px", objectFit: "cover", marginRight: "8px" }}
+                            src={URL.createObjectURL(images[0])}
+                            alt="Preview"
+                            height="40"
+                            style={{
+                              height: "102px",
+                              width: "106px",
+                              borderRadius: "4px",
+                            }}
                           />
-                        ))}
-                        <a href="javascript:void(0);">
-                          <FiXSquare className="x-square-add remove-product" />
-                        </a>
-                      </div>
+                        ) : (
+                          <>
+                            <CiCirclePlus className="plus-down-add" /> Add Image
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    <div className="mb-0">
+                      <input
+                        type="file"
+                        id="subCategoryImageInput"
+                        accept="image/png, image/jpeg"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setImages([file]);
+                          }
+                        }}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("subCategoryImageInput")
+                            .click()
+                        }
+                        className="btn btn-outline-primary"
+                      >
+                        Upload Image
+                      </button>
+                      <p className="mt-2">JPEG, PNG up to 2 MB</p>
                     </div>
                   </div>
                   <div className="mb-3">
@@ -413,6 +570,7 @@ const SubCategory = () => {
                       value={subCategoryName}
                       onChange={(e) => setSubCategoryName(e.target.value)}
                     />
+                     {errors.subCategoryName && (<p className="text-danger">{errors.subCategoryName}</p>)}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
@@ -473,28 +631,118 @@ const SubCategory = () => {
                   <span aria-hidden="true">×</span>
                 </button>
               </div>
-              <form >
+              <form onSubmit={handleUpdate}>
                 <div className="modal-body">
                   <div className="mb-3">
                     <div className="add-image-upload">
-                      <div className="add-image p-1 border-solid">
-                        <img src="assets/img/products/laptop.png" alt="image" />
-                        <a href="javascript:void(0);">
-                          <i
-                            data-feather="x"
-                            className="x-square-add image-close remove-product fs-12 text-white bg-danger rounded-1"
+                      {/* <div className="add-image p-1 border-solid">
+                        {images.length > 0 ? (
+                          <img
+                            src={URL.createObjectURL(images[0])}
+                            alt="preview"
+                            style={{
+                              height: "102px",
+                              width: "110px",
+                              borderRadius: "4px",
+                            }}
                           />
-                        </a>
-                      </div>
+                        ) : editingSubCategory?.images?.length > 0 ? (
+                          <img
+                            src={editingSubCategory.images[0]}
+                            alt="current"
+                            style={{
+                              height: "102px",
+                              width: "102px",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        ) : (
+                          <span>No image</span>
+                        )}
+                        {(images.length > 0 ||
+                          editingSubCategory?.images?.length > 0) && (
+                          <a
+                            href="javascript:void(0);"
+                            onClick={() => {
+                              setImages([]);
+                              setEditingSubCategory({
+                                ...editingSubCategory,
+                                images: [],
+                              });
+                            }}
+                          >
+                            <FiXSquare className="x-square-add image-close remove-product fs-12 text-white bg-danger rounded-1" />
+                          </a>
+                        )}
+                      </div> */}
                       <div className="new-employee-field">
-                        <div className="mb-0">
-                          <div className="image-upload mb-2">
-                            <input type="file" />
-                            <div className="image-uploads">
-                              <h4 className="fs-13 fw-medium">Change Image</h4>
-                            </div>
+                        <div className="profile-pic-upload mb-3">
+                          <div className="profile-pic brand-pic">
+                              {images.length > 0 ? (
+                                <img
+                                  src={URL.createObjectURL(images[0])}
+                                  alt="Preview"
+                                   style={{
+                              height: "100px",
+                              width: "100px",
+                              borderRadius: "4px",
+                            }}
+                                />
+                              ) : editingSubCategory?.images?.length > 0 ? (
+                          <img
+                            src={editingSubCategory.images[0]}
+                            alt="current"
+                            style={{
+                              height: "100px",
+                              width: "100px",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        ) : (
+                          <span>No image</span>
+                        )}
+                        {(images.length > 0 ||
+                          editingSubCategory?.images?.length > 0) && (
+                          <a style={{marginTop:'-100px'}}
+                            href="javascript:void(0);"
+                            onClick={() => {
+                              setImages([]);
+                              setEditingSubCategory({
+                                ...editingSubCategory,
+                                images: [],
+                              });
+                            }}
+                          >
+                            <FiXSquare className="x-square-add image-close remove-product fs-12 text-white bg-danger rounded-1" />
+                          </a>
+                        )}
                           </div>
-                          <span>JPEG, PNG up to 2 MB</span>
+                          <div className="mb-0">
+                            <input
+                              type="file"
+                              id="editSubCategoryImageInput"
+                              accept="image/png, image/jpeg"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  setImages([file]);
+                                }
+                              }}
+                              style={{ display: "none" }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                document
+                                  .getElementById("editSubCategoryImageInput")
+                                  .click()
+                              }
+                              className="btn btn-outline-primary"
+                            >
+                              Change Image
+                            </button>
+                            <p className="mt-2">JPEG, PNG up to 2 MB</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -503,12 +751,33 @@ const SubCategory = () => {
                     <label className="form-label">
                       Category<span className="text-danger ms-1">*</span>
                     </label>
-                    <select className="select">
-                      <option>Select</option>
-                      <option selected>Computers</option>
-                      <option>Shoe</option>
-                      <option>Electronics</option>
-                    </select>
+
+                    <Select
+                      id="category"
+                      options={categories}
+                      isSearchable
+                      placeholder="Search or select category..."
+                      value={
+                        categories.find(
+                          (opt) =>
+                            opt.value ===
+                            (editingSubCategory?.category?._id ||
+                              editingSubCategory?.categoryId)
+                        ) || null
+                      }
+                      onChange={(selectedOption) =>
+                        setEditingSubCategory({
+                          ...editingSubCategory,
+                          categoryId: selectedOption.value,
+                          category: {
+                            ...editingSubCategory.category,
+                            _id: selectedOption.value,
+                            categoryCode: selectedOption.code,
+                            categoryName: selectedOption.label,
+                          },
+                        })
+                      }
+                    />
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
@@ -517,8 +786,17 @@ const SubCategory = () => {
                     <input
                       type="text"
                       className="form-control"
-                      defaultValue="Laptop"
+                      value={editingSubCategory?.subCategoryName || ""}
+                      onChange={(e) =>
+                        setEditingSubCategory({
+                          ...editingSubCategory,
+                          subCategoryName: e.target.value,
+                        })
+                      }
                     />
+                    {errors.subCategoryName && (
+                      <p className="text-danger">{errors.subCategoryName}</p>
+                    )}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
@@ -527,7 +805,15 @@ const SubCategory = () => {
                     <input
                       type="text"
                       className="form-control"
-                      defaultValue="CT001"
+                      value={
+                        categories.find(
+                          (opt) =>
+                            opt.value ===
+                            (editingSubCategory?.category?._id ||
+                              editingSubCategory?.categoryId)
+                        )?.code || ""
+                      }
+                      readOnly
                     />
                   </div>
                   <div className="mb-3">
@@ -536,7 +822,13 @@ const SubCategory = () => {
                     </label>
                     <textarea
                       className="form-control"
-                      defaultValue={"Efficient Productivity"}
+                      value={editingSubCategory?.description || ""}
+                      onChange={(e) =>
+                        setEditingSubCategory({
+                          ...editingSubCategory,
+                          description: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="mb-0">
@@ -546,7 +838,13 @@ const SubCategory = () => {
                         type="checkbox"
                         id="user3"
                         className="check"
-                        defaultChecked
+                        checked={editingSubCategory?.status || false}
+                        onChange={(e) =>
+                          setEditingSubCategory({
+                            ...editingSubCategory,
+                            status: e.target.checked,
+                          })
+                        }
                       />
                       <label htmlFor="user3" className="checktoggle" />
                     </div>
