@@ -456,7 +456,7 @@
 //           </div>
 //         </div>
 //         {/* /product list */}
-        
+
 //       </div>
 //       {/* <CategoryModal
 //         modalId="categoryModal"
@@ -507,7 +507,7 @@
 //           onSubmit={handleSubmit}
 //           submitLabel="Add Category"
 //         />
-    
+
 //         <CategoryModal
 //           modalId="edit-category"
 //           title="Edit category"
@@ -537,7 +537,7 @@ import { toast } from "react-toastify";
 import CategoryModal from "../../../pages/Modal/categoryModals/CategoryModal";
 import DeleteAlert from "../../../utils/sweetAlert/DeleteAlert";
 import Swal from "sweetalert2";
-import {sanitizeInput} from "../../../utils/sanitize"
+import { sanitizeInput } from "../../../utils/sanitize"
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -595,28 +595,26 @@ const Category = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let newErrors = {};
-    if(!nameRegex.test(categoryName)) {
+    if (!nameRegex.test(categoryName)) {
       newErrors.categoryName = "Enter a valid category name (letters only, min 2 chars)";
     }
-    if(!slugRegex.test(categorySlug)) {
-      newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
-    }
+    // if(!slugRegex.test(categorySlug)) {
+    //   newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
+    // }
     setErrors(newErrors);
-   if(Object.keys(newErrors).length > 0) return;
+    if (Object.keys(newErrors).length > 0) return;
 
-    if (!categoryName || !categorySlug) {
-      toast.error("All fields are required");
-      return;
-    }
 
     try {
       const cleanName = sanitizeInput(categoryName)
       const cleanSlug = sanitizeInput(categorySlug)
 
-      await axios.post(`${BASE_URL}/api/category/categories`, {
-        categoryName: cleanName,
-        categorySlug: cleanSlug,
-      });
+      const payload = { categoryName: cleanName };
+    if (cleanSlug && cleanSlug.trim() !== "") {
+      payload.categorySlug = cleanSlug;
+      }
+      
+      await axios.post(`${BASE_URL}/api/category/categories`, payload);
 
       toast.success("Category created successfully!");
 
@@ -635,18 +633,18 @@ const Category = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    
-    let newErrors = {};
-  if (!nameRegex.test(editCategoryName)) {
-    newErrors.categoryName = "Enter a valid category name (letters only, min 2 chars)";
-  }
-  if (!slugRegex.test(editCategorySlug)) {
-    newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
-  }
-  setErrors(newErrors);
 
-  // Stop update if validation fails
-  if (Object.keys(newErrors).length > 0) return;
+    let newErrors = {};
+    if (!nameRegex.test(editCategoryName)) {
+      newErrors.categoryName = "Enter a valid category name (letters only, min 2 chars)";
+    }
+    if (!slugRegex.test(editCategorySlug)) {
+      newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
+    }
+    setErrors(newErrors);
+
+    // Stop update if validation fails
+    if (Object.keys(newErrors).length > 0) return;
     try {
       const cleanName = sanitizeInput(editingCategories.categoryName);
       const cleanSlug = sanitizeInput(editingCategories.categorySlug);
@@ -840,29 +838,29 @@ const Category = () => {
             <div className="table-responsive">
               <table className="table datatable">
                 <thead className="thead-light">
-                  <tr style={{textAlign:'center'}}>
+                  <tr style={{ textAlign: 'center' }}>
                     <th className="no-sort">
                       <label className="checkboxs">
-                      <input
-                        type="checkbox"
-                        checked={
-                          paginatedCategories.length > 0 &&
-                          paginatedCategories.every((cat) =>
-                            selectedCategories.includes(cat._id)
-                          )
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            const newIds = paginatedCategories.map((cat) => cat._id);
-                            setSelectedCategories((prev) => [...new Set([...prev, ...newIds])]);
-                          } else {
-                            const idsToRemove = paginatedCategories.map((cat) => cat._id);
-                            setSelectedCategories((prev) =>
-                              prev.filter((id) => !idsToRemove.includes(id))
-                            );
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedCategories.length > 0 &&
+                            paginatedCategories.every((cat) =>
+                              selectedCategories.includes(cat._id)
+                            )
                           }
-                        }}
-                      />
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const newIds = paginatedCategories.map((cat) => cat._id);
+                              setSelectedCategories((prev) => [...new Set([...prev, ...newIds])]);
+                            } else {
+                              const idsToRemove = paginatedCategories.map((cat) => cat._id);
+                              setSelectedCategories((prev) =>
+                                prev.filter((id) => !idsToRemove.includes(id))
+                              );
+                            }
+                          }}
+                        />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -877,22 +875,22 @@ const Category = () => {
                 <tbody>
                   {paginatedCategories.length > 0 ? (
                     paginatedCategories.map((category) => (
-                      <tr key={category._id} style={{textAlign:'center'}}>
+                      <tr key={category._id} style={{ textAlign: 'center' }}>
                         <td>
                           <label className="checkboxs">
-                          <input
-                            type="checkbox"
-                            checked={selectedCategories.includes(category._id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedCategories((prev) => [...prev, category._id]);
-                              } else {
-                                setSelectedCategories((prev) =>
-                                  prev.filter((id) => id !== category._id)
-                                );
-                              }
-                            }}
-                          />
+                            <input
+                              type="checkbox"
+                              checked={selectedCategories.includes(category._id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedCategories((prev) => [...prev, category._id]);
+                                } else {
+                                  setSelectedCategories((prev) =>
+                                    prev.filter((id) => id !== category._id)
+                                  );
+                                }
+                              }}
+                            />
                             <span className="checkmarks" />
                           </label>
                         </td>
@@ -965,61 +963,60 @@ const Category = () => {
             </div>
             {/* pagination */}
             <div className="d-flex justify-content-between align-items-center p-3">
-          {/* <div>
+              {/* <div>
             Showing {indexOfFirstItem + 1}-
             {Math.min(indexOfLastItem, filteredCategories.length)} of{" "}
             {filteredCategories.length}
           </div> */}
-          <div className="d-flex justify-content-end align-items-center">
-  <label className="me-2">Items per page:</label>
-  <select
-    value={itemsPerPage}
-    onChange={(e) => {
-      setItemsPerPage(Number(e.target.value));
-      setCurrentPage(1); // reset to first page
-    }}
-    className="form-select w-auto"
-  >
-    <option value={10}>10</option>
-    <option value={25}>25</option>
-    <option value={50}>50</option>
-    <option value={100}>100</option>
-  </select>
-</div>
-          <div>
-            <button
-              className="btn btn-light btn-sm me-2"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                className={`btn btn-sm me-1 ${
-                  currentPage === i + 1 ? "btn-primary" : "btn-outline-primary"
-                }`}
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              className="btn btn-light btn-sm"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+              <div className="d-flex justify-content-end align-items-center">
+                <label className="me-2">Items per page:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1); // reset to first page
+                  }}
+                  className="form-select w-auto"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              <div>
+                <button
+                  className="btn btn-light btn-sm me-2"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`btn btn-sm me-1 ${currentPage === i + 1 ? "btn-primary" : "btn-outline-primary"
+                      }`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-light btn-sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         {/* /product list */}
-        
+
       </div>
       {/* <CategoryModal
         modalId="categoryModal"
@@ -1058,7 +1055,7 @@ const Category = () => {
         }
         onSubmit={isEditMode ? handleUpdate : handleSubmit}
         submitLabel={isEditMode ? "Update" : "Submit"}
-        errors={errors} 
+        errors={errors}
       />
 
     </div>

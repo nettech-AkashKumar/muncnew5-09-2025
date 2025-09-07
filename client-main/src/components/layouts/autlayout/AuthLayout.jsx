@@ -11,7 +11,7 @@ const AuthLayout = () => {
   const { mobileOpen } = useSidebar();
 
   return (
-    <div className={`auth-layout ${mobileOpen ? 'collapsed' : 'expanded'}`}>
+    <div className={`auth-layout ${mobileOpen ? 'slide-nav' : ''}`}>
       {/* Sidebar */}
       <Sidebar />
 

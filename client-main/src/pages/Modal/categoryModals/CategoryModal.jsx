@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 
 const CategoryModal = ({
   modalId,
@@ -10,22 +10,22 @@ const CategoryModal = ({
   onSlugChange,
   onSubmit,
   submitLabel = "Submit",
-  errors={}
+  errors = {}
 }) => {
 
-  
+
   return (
     <div className="modal" id={modalId} tabIndex="-1" aria-hidden="true">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
-          <div className="modal-header" style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div className="modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h5 className="modal-title">{title}</h5>
             <button
               type="button"
               className=""
               data-bs-dismiss="modal"
               aria-label="Close"
-              style={{color:'white', backgroundColor:'red', borderRadius:'50%'}}
+              style={{ color: 'white', backgroundColor: 'red', borderRadius: '50%' }}
             >x</button>
           </div>
 
@@ -41,6 +41,7 @@ const CategoryModal = ({
                   value={categoryName}
                   onChange={onCategoryChange}
                   required
+                  placeholder="Category Name (only letters allowed)"
                 />
                 {errors.categoryName && (
                   <p className="text-danger">{errors.categoryName}</p>
@@ -49,18 +50,19 @@ const CategoryModal = ({
 
               <div className="mb-3">
                 <label className="form-label">
-                  Category Slug <span className="text-danger">*</span>
+                  Category Slug 
                 </label>
                 <input
                   type="text"
                   className="form-control"
                   value={categorySlug}
-                  onChange={onSlugChange}
-                  required
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const stringOnly = value.replace(/[^a-zA-Z\s-]/g, "");
+                    onSlugChange({ target: { value: stringOnly } })
+                  }}
+                  placeholder="Optional slug (only letters allowed)"
                 />
-                {errors.categorySlug && (
-                  <p className="text-danger">{errors.categorySlug}</p>
-                )}
               </div>
             </div>
 
@@ -72,7 +74,7 @@ const CategoryModal = ({
               >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-primary" data-bs-dismiss="modal">
                 {submitLabel}
               </button>
             </div>
