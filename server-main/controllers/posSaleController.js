@@ -321,6 +321,9 @@ const getPosSales = async (req, res) => {
     // Build filter object
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
+    if (req.query.paymentStatus) filter.status = req.query.paymentStatus; // Handle paymentStatus parameter
+    if (req.query.paymentMethod) filter['paymentDetails.paymentMethod'] = req.query.paymentMethod; // Handle paymentMethod parameter
+    if (req.query.mode) filter['paymentDetails.paymentMethod'] = req.query.mode; // Handle mode parameter (alternative name)
     if (req.query.customerId) filter['customer.customerId'] = req.query.customerId;
     if (req.query.startDate && req.query.endDate) {
       filter.saleDate = {
@@ -432,4 +435,4 @@ module.exports = {
   getPosSales,
   getPosSaleById,
   getSalesSummary
-}; 
+};

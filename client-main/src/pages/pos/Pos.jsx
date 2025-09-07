@@ -621,7 +621,9 @@ const fetchCustomers = async () => {
   };
 
 // Fetch sales transactions-------------------------------------------------------------------------------------------------
-  const fetchPosSales = async (page = 1, searchQuery = '') => {
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'recent', 'paid', 'due'
+  
+  const fetchPosSales = async (page = 1, searchQuery = '', filter = activeFilter, statusFilter = '', modeFilter = '') => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -634,6 +636,28 @@ const fetchCustomers = async () => {
         params.append('search', searchQuery);
       }
       
+      // Add filter parameters
+      if (filter === 'recent') {
+        // Last 24 hours
+        const last24Hours = new Date();
+        last24Hours.setHours(last24Hours.getHours() - 24);
+        params.append('startDate', last24Hours.toISOString());
+      } else if (filter === 'paid') {
+        params.append('paymentStatus', 'Paid'); // Changed to match case in the model (Paid not paid)
+      } else if (filter === 'due') {
+        params.append('paymentStatus', 'Due'); // Changed to match case in the model (Due not due)
+      }
+      
+      // Add status filter if provided
+      if (statusFilter) {
+        params.append('paymentStatus', statusFilter);
+      }
+      
+      // Add payment mode filter if provided
+      if (modeFilter) {
+        params.append('mode', modeFilter); // Changed to 'mode' to match the parameter name in the server controller
+      }
+      
       const response = await axios.get(`${BASE_URL}/api/pos-sales/transactions?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -641,6 +665,7 @@ const fetchCustomers = async () => {
       setTotalPages(response.data.pagination.totalPages);
       setTotalSales(response.data.pagination.totalSales);
       setCurrentPage(page);
+      setActiveFilter(filter);
     } catch (error) {
       console.error('Error fetching POS sales:', error);
     } finally {
@@ -651,7 +676,7 @@ const fetchCustomers = async () => {
 // Transaction search functionality
   const handleTransactionSearch = (query) => {
     setTransactionSearchQuery(query);
-    fetchPosSales(1, query);
+    fetchPosSales(1, query, activeFilter, categoryValue, socketValue);
   };
 
 // Create POS sale---------------------------------------------------------------------------------------------------------------------
@@ -732,7 +757,7 @@ const fetchCustomers = async () => {
 // Handle pagination
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      fetchPosSales(newPage, transactionSearchQuery);
+      fetchPosSales(newPage, transactionSearchQuery, activeFilter, categoryValue, socketValue);
     }
   };
 
@@ -1137,7 +1162,7 @@ const handleSubmit = async (e) => {
             placeholder="Search any product by its name, brand, category..." 
             value={productSearchQuery}
             onChange={(e) => handleProductSearch(e.target.value)}
-            style={{width:'95%',padding:'8px',fontSize:'16px',border:'none',outline:'none',color:'#333'}} 
+            style={{width:'95%',padding:'8px',fontSize:'16px',border:'none',outline:'none',color:'#333',backgroundColor:'transparent'}} 
           />
         </div>
 
@@ -1290,13 +1315,13 @@ const handleSubmit = async (e) => {
       </div>
 
       {/* pos area */}
-      <div style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid white',borderBottom:'1px solid #ccc',borderRight:'1px solid #ccc',height:'83vh'}}>
+      <div style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid white',borderBottom:'1px solid #ccc',borderRight:'1px solid #ccc',height:'88vh'}}>
         
         {/* products section */}
-        <div style={{position:"relative",width:'100%',display:'flex',borderRight:'1px solid #ccc',}}>
+        <div style={{position:"relative",width:'70%',display:'flex',borderRight:'1px solid #ccc',}}>
 
             {/* category */}
-            <div style={{padding:'10px 10px',borderRight:'1px solid #ccc',overflowY:'auto'}}>
+            <div style={{width:'20%',padding:'10px 10px',borderRight:'1px solid #ccc',overflowY:'auto'}}>
 
               {/* all items*/}
               <div style={{lineHeight:'30px'}}>
@@ -1307,7 +1332,7 @@ const handleSubmit = async (e) => {
                     flexDirection:'column',
                     marginLeft:'10px',
                     borderLeft: selectedCategory === null ? '1px solid #0051CF' : '',
-                    backgroundColor: selectedCategory === null ? '#F7F7F7' : 'transparent',
+                    backgroundColor: selectedCategory === null ? 'white' : 'transparent',
                     borderRadius:'8px',
                     padding:'2px 5px',
                     fontWeight:'600',
@@ -1334,7 +1359,7 @@ const handleSubmit = async (e) => {
                       padding:'2px 5px',
                       borderRadius:'8px',
                       borderLeft:  selectedCategory && selectedCategory._id === category._id ? '1px solid #0051CF' : '',
-                      backgroundColor: selectedCategory && selectedCategory._id === category._id ? '#F7F7F7' : 'transparent',
+                      backgroundColor: selectedCategory && selectedCategory._id === category._id ? 'white' : 'transparent',
                       fontWeight: selectedCategory && selectedCategory._id === category._id ? '600' : 'normal'
                     }}
                     onClick={() => handleCategoryClick(category)}
@@ -1350,8 +1375,8 @@ const handleSubmit = async (e) => {
             <div style={{width:'80%',backgroundColor:'#F7F7F7',height:'100%',overflowY:'auto'}}>
               
               {/* products */}
-              <div style={{height:'74vh',marginTop:'20px',overflowY:'auto',padding:'0px 20px',}}>
-              <div className='row gap-3' style={{gap:'25px',marginLeft:'40px',}}>
+              <div style={{height:'74vh',marginTop:'20px',overflowY:'auto',padding:'0px 20px',marginLeft:'60px'}}>
+              <div className='row gap-3' style={{gap:'30px',}}>
               
               
               {products.length === 0 ? (
@@ -2024,7 +2049,14 @@ const handleSubmit = async (e) => {
 
             <div style={{display:'flex',justifyContent:'space-between',marginTop:'5px',marginBottom:'8px'}}>
               <div></div>
-              <div style={{padding:'3px 10px',backgroundColor:'white',border:'2px solid #E6E6E6',borderRadius:'8px',color:'#676767'}}>
+              <div style={{
+                  padding:'3px 10px',
+                  backgroundColor:'#1368EC',
+                  border:'2px solid #E6E6E6',
+                  borderRadius:'8px',
+                  color:'white',
+                  cursor:'pointer'
+                }}>
                 <span>Send OTP</span>
               </div>
             </div>
@@ -2275,7 +2307,8 @@ const handleSubmit = async (e) => {
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     {searchdrop ? (
                       <>
-                        <div style={{ border: 'none', marginLeft: '10px', alignItems: 'center', display: 'flex', width: '600px' }}>
+                      <div style={{display:'flex',justifyContent:'space-between',width:'1270px'}}>
+                        <div style={{ border: 'none', marginLeft: '10px', alignItems: 'center', display: 'flex', width: '1000px' }}>
                           <IoIosSearch style={{ fontSize: '25px' }} />
                           <input 
                             type='text' 
@@ -2285,27 +2318,73 @@ const handleSubmit = async (e) => {
                             style={{ border: 'none', outline: 'none', fontSize: '20px', width: '100%', color: '#333' }} 
                           />
                         </div>
+                        <div style={{ color: 'black', padding: '7px 8px', borderRadius: '6px', border: '2px solid #ccc', display: 'flex', gap: '10px', alignItems: 'center', cursor:'pointer' }} onClick={handleClear}><TbArrowsSort /></div>
+                      </div>
                       </>
                     ) : (
                       <>
                         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                          <div style={{ backgroundColor: '#ccc', color: 'black', padding: '5px 8px', borderRadius: '6px' }}>All</div>
-                          <div style={{ color: 'black', padding: '5px 8px', }}>Recents</div>
-                          <div style={{ color: 'black', padding: '5px 8px', }}>Paid</div>
-                          <div style={{ color: 'black', padding: '5px 8px', }}>Due</div>
-                    <div 
-                      style={{ 
-                        color: 'black', 
-                        padding: '5px 8px', 
-                        cursor: 'pointer',
-                        backgroundColor: '#f0f0f0',
-                        borderRadius: '4px'
-                      }}
-                      onClick={() => fetchPosSales(currentPage, transactionSearchQuery)}
-                      title="Refresh"
-                    >
-                      ↻
-                    </div>
+                          <div 
+                            style={{ 
+                              backgroundColor: activeFilter === 'all' ? '#1368EC' : '#f0f0f0', 
+                              color: activeFilter === 'all' ? 'white' : 'black', 
+                              padding: '5px 8px', 
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => fetchPosSales(1, transactionSearchQuery, 'all')}
+                          >
+                            All
+                          </div>
+                          <div 
+                            style={{ 
+                              backgroundColor: activeFilter === 'recent' ? '#1368EC' : '#f0f0f0', 
+                              color: activeFilter === 'recent' ? 'white' : 'black', 
+                              padding: '5px 8px', 
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => fetchPosSales(1, transactionSearchQuery, 'recent')}
+                          >
+                            Recent
+                          </div>
+                          <div 
+                            style={{ 
+                              backgroundColor: activeFilter === 'paid' ? '#1368EC' : '#f0f0f0', 
+                              color: activeFilter === 'paid' ? 'white' : 'black', 
+                              padding: '5px 8px', 
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => fetchPosSales(1, transactionSearchQuery, 'paid')}
+                          >
+                            Paid
+                          </div>
+                          <div 
+                            style={{ 
+                              backgroundColor: activeFilter === 'due' ? '#1368EC' : '#f0f0f0', 
+                              color: activeFilter === 'due' ? 'white' : 'black', 
+                              padding: '5px 8px', 
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => fetchPosSales(1, transactionSearchQuery, 'due')}
+                          >
+                            Due
+                          </div>
+                          <div 
+                            style={{ 
+                              color: 'black', 
+                              padding: '5px 8px', 
+                              cursor: 'pointer',
+                              backgroundColor: '#f0f0f0',
+                              borderRadius: '4px'
+                            }}
+                            onClick={() => fetchPosSales(currentPage, transactionSearchQuery, activeFilter)}
+                            title="Refresh"
+                          >
+                            ↻
+                          </div>
                         </div>
                       </>
                     )}
@@ -2319,7 +2398,6 @@ const handleSubmit = async (e) => {
                           <CgSortAz style={{ fontSize: '25px' }} />
                         </div>
                       </>)}
-                    <div style={{ color: 'black', padding: '7px 8px', borderRadius: '6px', border: '2px solid #ccc', display: 'flex', gap: '10px', alignItems: 'center', cursor:'pointer' }} onClick={handleClear}><TbArrowsSort /></div>
                   </div>
                 </div>
 
@@ -2333,48 +2411,55 @@ const handleSubmit = async (e) => {
                         </div>
 
                         <div
-                          style={{ border: categoryValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 8px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}
-                          value={categoryValue}
-                          onChange={handleCategoryChange}>
-                          <select className="" style={{ outline: 'none', border: 'none', color: categoryValue ? '#1368EC' : '#555252' }}>
-                            <option value="" style={{ color: '#555252' }}>Category</option>
-                            <option value="c1" style={{ color: '#555252' }}>Category 1</option>
-                            <option value="c2" style={{ color: '#555252' }}>Category 2</option>
+                          style={{ border: categoryValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 8px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}>
+                          <select 
+                            className="" 
+                            style={{ outline: 'none', border: 'none', color: categoryValue ? '#1368EC' : '#555252' }}
+                            value={categoryValue}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              handleCategoryChange(e);
+                              fetchPosSales(1, transactionSearchQuery, activeFilter, value, socketValue);
+                            }}
+                          >
+                            <option value="" style={{ color: '#555252' }}>--status--</option>
+                            <option value="Paid" style={{ color: '#555252' }}>Paid</option>
+                            <option value="Due" style={{ color: '#555252' }}>Due</option>
                           </select>
                         </div>
 
                         <div
-                          style={{ border: socketValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 8px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}
-                          value={socketValue}
-                          onChange={handleSocketChange}>
-                          <select className="" style={{ outline: 'none', border: 'none', color: socketValue ? '#1368EC' : '#555252' }}>
-                            <option value="" style={{ color: '#555252' }}>Socket Level</option>
-                            <option value="sl1" style={{ color: '#555252' }}>Last 7 days</option>
-                          </select>
-                        </div>
-
-                        <div
-                          style={{ border: warehouseValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 8px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}
-                          value={warehouseValue}
-                          onChange={handleWarehouseChange}>
-                          <select className="" style={{ outline: 'none', border: 'none', color: warehouseValue ? '#1368EC' : '#555252' }}>
-                            <option value="" style={{ color: '#555252' }}>Warehouse</option>
-                            <option value="wh1" style={{ color: '#555252' }}>Warehouse 1</option>
-                          </select>
-                        </div>
-
-                        <div
-                          style={{ border: exprationValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 3px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}
-                          value={exprationValue}
-                          onChange={handleExprationChange}>
-                          <select className="" style={{ outline: 'none', border: 'none', color: exprationValue ? '#1368EC' : '#555252' }}>
-                            <option value="" style={{ color: '#555252' }}>Expiration</option>
-                            <option value="e1" style={{ color: '#555252' }}>Expiration 1</option>
+                          style={{ border: socketValue ? '2px dashed #1368EC' : '2px dashed #ccc', padding: '0px 10px 0px 8px', alignItems: 'center', display: 'flex', borderRadius: '6px' }}>
+                          <select 
+                            className="" 
+                            style={{ outline: 'none', border: 'none', color: socketValue ? '#1368EC' : '#555252' }}
+                            value={socketValue}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              handleSocketChange(e);
+                              fetchPosSales(1, transactionSearchQuery, activeFilter, categoryValue, value);
+                            }}
+                          >
+                            <option value="" style={{ color: '#555252' }}>--mode--</option>
+                            <option value="Cash" style={{ color: '#555252' }}>Cash</option>
+                            <option value="UPI" style={{ color: '#555252' }}>UPI</option>
+                            <option value="Card" style={{ color: '#555252' }}>Card</option>
                           </select>
                         </div>
                       </div>
 
-                      <div style={{ color: 'black', padding: '2px 8px', borderRadius: '6px', border: '2px solid #ccc', display: 'flex', alignItems: 'center', cursor:'pointer' }}>
+                      <div 
+                        style={{ color: 'black', padding: '2px 8px', borderRadius: '6px', border: '2px solid #ccc', display: 'flex', alignItems: 'center', cursor:'pointer' }}
+                        onClick={() => {
+                          // Reset all filters
+                          setCategoryValue('');
+                          setSocketValue('');
+                          setActiveFilter('all');
+                          setTransactionSearchQuery('');
+                          // Refresh transactions with no filters
+                          fetchPosSales(1, '', 'all', '', '');
+                        }}
+                      >
                         <span>Clear</span>
                       </div>
 
