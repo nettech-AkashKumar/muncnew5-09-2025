@@ -264,7 +264,7 @@ const canAccess = (module, action = "read") => { if (!permissions || !permission
           icon: <TbSettings className="icons" />,
           key: "generalSettings",
           subItems: [
-            canAccess("Settings", "read") && { label: "Profile", path: "/general-settings" },
+            canAccess("Settings", "read") && { label: "Profile", path: `/profile/${id}` },
             canAccess("Settings", "read") && { label: "Security", path: "/security-settings" },
           ].filter(Boolean),
         },

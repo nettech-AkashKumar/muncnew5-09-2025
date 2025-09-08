@@ -21,9 +21,11 @@ import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { io } from 'socket.io-client';
 import { useAuth } from '../../auth/AuthContext';
+import { useInbox } from '../../features/Mail/SideBar/InboxContext';
 
 
 function Navbar() {
+  const {inboxCount, fetchInboxCount} = useInbox();
     // state for company logo
   const [companyImages, setCompanyImages] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -249,6 +251,13 @@ function Navbar() {
     }
   }, [companyImages])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchInboxCount();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
 
 
   return (
@@ -414,7 +423,7 @@ function Navbar() {
           <li className="nav-item nav-item-box">
             <Link to="/mail">
               <TbMail />
-              <span className="badge rounded-pill">1</span>
+              <span className="badge rounded-pill">{inboxCount}</span>
             </Link>
           </li>
           {/* Notifications */}
