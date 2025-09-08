@@ -21,10 +21,6 @@ import { TbEdit, TbPdf, TbRefresh, TbSearch, TbTrash } from "react-icons/tb";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import BASE_URL from "../../../../pages/config/config";
 
-
-
-
-
 const calculateDuration = (fromDate, toDate) => {
   if (!fromDate || !toDate) return "";
 
@@ -38,8 +34,6 @@ const calculateDuration = (fromDate, toDate) => {
 
   return `${(totalMonths / 12).toFixed(1)} years`;
 };
-
-
 
 const Warranty = ({ show, handleClose }) => {
   const [showModal, setShowModal] = useState(false);
@@ -56,9 +50,7 @@ const Warranty = ({ show, handleClose }) => {
   const [warranties, setWarranties] = useState([]);
   const [FilteredWarranties, setFilteredWarranties] = useState([]);
   const [loading, setLoading] = useState(false);
-
-
-
+  const [selectedWarranties, setSelectedWarranties] = useState([]);
 
   const fetchWarranties = async () => {
     try {
@@ -90,8 +82,6 @@ const Warranty = ({ show, handleClose }) => {
     fetchWarranties();
   }, []);
 
-
-
   useEffect(() => {
     const fetchGiftData = async () => {
       try {
@@ -112,8 +102,6 @@ const Warranty = ({ show, handleClose }) => {
     };
     fetchGiftData();
   }, []);
-
-
 
   const handleExportPDF = () => {
     const table = tableRef.current;
@@ -145,7 +133,6 @@ const Warranty = ({ show, handleClose }) => {
         setError("Failed to generate PDF. Please try again.");
       });
   };
-
 
   const handleExportExcel = () => {
     const exportData = filteredWarranties.map((item) => ({
@@ -251,7 +238,11 @@ const Warranty = ({ show, handleClose }) => {
     };
 
     // 👉 New: auto-calculate duration from fromDate and toDate
-    if ((name === "fromDate" || name === "toDate") && updatedForm.fromDate && updatedForm.toDate) {
+    if (
+      (name === "fromDate" || name === "toDate") &&
+      updatedForm.fromDate &&
+      updatedForm.toDate
+    ) {
       const from = new Date(updatedForm.fromDate);
       const to = new Date(updatedForm.toDate);
 
@@ -266,25 +257,28 @@ const Warranty = ({ show, handleClose }) => {
     setEditFormData(updatedForm);
   };
 
-
-
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${BASE_URL}/api/warranty/${editFormData.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editFormData),
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/warranty/${editFormData.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editFormData),
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to update warranty");
       }
       const data = await response.json();
       console.log("Updated Warranty:", data);
       setWarrantydata((prevData) =>
-        prevData.map((card) => (card.id === data.id ? { ...card, ...data } : card))
+        prevData.map((card) =>
+          card.id === data.id ? { ...card, ...data } : card
+        )
       );
       handleEditClose();
     } catch (err) {
@@ -292,7 +286,6 @@ const Warranty = ({ show, handleClose }) => {
       setError("Failed to update warranty. Please try again.");
     }
   };
-
 
   const handleDelete = async (id) => {
     try {
@@ -312,7 +305,6 @@ const Warranty = ({ show, handleClose }) => {
     }
   };
 
-
   const filteredWarranties = useMemo(() => {
     return Warrantydata.filter((item) => {
       const warranty = item?.warranty || "";
@@ -328,8 +320,6 @@ const Warranty = ({ show, handleClose }) => {
     });
   }, [Warrantydata, searchTerm, statusFilter]);
 
-
-
   const openDeleteModal = (id) => {
     setPendingDeleteId(id);
     setShowDeleteModal(true);
@@ -337,110 +327,204 @@ const Warranty = ({ show, handleClose }) => {
 
   const handleShow = () => setShowModal(true);
 
+  // Toggle single checkbox
+  const handleCheckboxChange = (id) => {
+    setSelectedWarranties((prev) =>
+      prev.includes(id) ? prev.filter((w) => w !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle "Select All"
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = filteredWarranties
+        .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+        .map((item) => item.id);
+      setSelectedWarranties(allIds);
+    } else {
+      setSelectedWarranties([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        selectedWarranties.map((id) =>
+          fetch(`${BASE_URL}/api/warranty/${id}`, { method: "DELETE" })
+        )
+      );
+      setWarrantydata((prev) =>
+        prev.filter((item) => !selectedWarranties.includes(item.id))
+      );
+      setSelectedWarranties([]); // clear after delete
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      setError("Failed to delete selected warranties");
+    }
+  };
 
   return (
-    	<div className="page-wrapper">
-				<div className="content">
-					<div className="page-header">
-						<div className="add-item d-flex">
-							<div className="page-title">
-								<h4 className="fw-bold">Warranties</h4>
-								<h6>Manage your warranties</h6>
-							</div>
-						</div>
-						<ul className="table-top-head">
-							<li>
-								<a data-bs-toggle="tooltip"  title="Pdf" onClick={handleExportPDF}><FaFilePdf className="fs-20" style={{color:"red"}} /></a>
-										
-							</li>
-							<li>
-								<a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel"><FaFileExcel className="fs-20" style={{color:"green"}}/></a>
-
-							</li>
-							<li>
-								<a data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><TbRefresh/></a>
-									
-							</li>
-							<li>
-								<a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i
-										className="ti ti-chevron-up" /></a>
-							</li>
-						</ul>
-						<div className="page-btn">
-							<a href="#" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-warranty" onClick={handleShow}><i
-									className="ti ti-circle-plus me-1" />Add Warranty</a>
-						</div>
-					</div>
-					{/* /product list */}
-					<div className="card">
-						<div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-							<div className="search-set">
-								<div className="search-input">
-                  <input
-                type="search"
-                className="form-control rounded"
-                placeholder="🔍︎ Search"
-                aria-label="Search"
-                aria-describedby="search-addon"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-					
-								</div>
-							</div>
-							<div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-								<div className="dropdown" >
-									<a
-										className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-										data-bs-toggle="dropdown" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-										Status
-									</a>
-									<ul className="dropdown-menu  dropdown-menu-end p-3">
-										<li>
-											<a className="dropdown-item rounded-1">Active</a>
-										</li>
-										<li>
-											<a className="dropdown-item rounded-1">Inactive</a>
-										</li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div className="card-body p-0">
-							<div className="table-responsive">
-								<table className="table datatable" ref={tableRef}>
-									<thead className="thead-light">
-										<tr>
-											<th className="no-sort">
-												<label className="checkboxs">
-													<input type="checkbox" id="select-all" />
-													<span className="checkmarks" />
-												</label>
-											</th>
-											<th>Warranty</th>
-											<th>Description</th>
-                      <th>From Date</th>
-                      <th>To Date</th>
-											<th>Duration</th>
-											<th>Status</th>
-											<th className="no-sort" />
-										</tr>
-									</thead>
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="page-header">
+          <div className="add-item d-flex">
+            <div className="page-title">
+              <h4 className="fw-bold">Warranties</h4>
+              <h6>Manage your warranties</h6>
+            </div>
+          </div>
+          <ul className="table-top-head">
+            <li>
+              {selectedWarranties.length > 0 && (
+                <button
+                  className="btn btn-danger mb-2"
+                  onClick={handleBulkDelete}
+                >
+                  Delete ({selectedWarranties.length}) Selected
+                </button>
+              )}
+            </li>
+            <li>
+              <a data-bs-toggle="tooltip" title="Pdf" onClick={handleExportPDF}>
+                <FaFilePdf className="fs-20" style={{ color: "red" }} />
+              </a>
+            </li>
+            <li>
+              <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
+                <FaFileExcel className="fs-20" style={{ color: "green" }} />
+              </a>
+            </li>
+            <li>
+              <a
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Refresh"
+              >
+                <TbRefresh />
+              </a>
+            </li>
+            <li>
+              <a
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Collapse"
+                id="collapse-header"
+              >
+                <i className="ti ti-chevron-up" />
+              </a>
+            </li>
+          </ul>
+          <div className="page-btn">
+            <a
+              href="#"
+              className="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#add-warranty"
+              onClick={handleShow}
+            >
+              <i className="ti ti-circle-plus me-1" />
+              Add Warranty
+            </a>
+          </div>
+        </div>
+        {/* /product list */}
+        <div className="card">
+          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
+            <div className="search-set">
+              <div className="search-input">
+                <input
+                  type="search"
+                  className="form-control rounded"
+                  placeholder="🔍︎ Search"
+                  aria-label="Search"
+                  aria-describedby="search-addon"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
+              <div className="dropdown">
+                <a
+                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+                  data-bs-toggle="dropdown"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  Status
+                </a>
+                <ul className="dropdown-menu  dropdown-menu-end p-3">
+                  <li>
+                    <a className="dropdown-item rounded-1">Active</a>
+                  </li>
+                  <li>
+                    <a className="dropdown-item rounded-1">Inactive</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table datatable" ref={tableRef}>
+                <thead className="thead-light">
+                  <tr>
+                    <th className="no-sort">
+                      <label className="checkboxs">
+                        <input
+                          type="checkbox"
+                          id="select-all"
+                          onChange={handleSelectAll}
+                          checked={
+                            filteredWarranties.length > 0 &&
+                            filteredWarranties
+                              .slice(
+                                (currentPage - 1) * rowsPerPage,
+                                currentPage * rowsPerPage
+                              )
+                              .every((item) =>
+                                selectedWarranties.includes(item.id)
+                              )
+                          }
+                        />
+                        <span className="checkmarks" />
+                      </label>
+                    </th>
+                    <th>Warranty</th>
+                    <th>Description</th>
+                    <th>From Date</th>
+                    <th>To Date</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th className="no-sort" />
+                  </tr>
+                </thead>
                 <tbody>
-
                   {filteredWarranties
-                    .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                    .slice(
+                      (currentPage - 1) * rowsPerPage,
+                      currentPage * rowsPerPage
+                    )
                     .map((item, idx) => (
                       <tr key={idx}>
                         <td>
                           <label className="checkboxs">
-                            <input type="checkbox" />
+                            <input
+                              type="checkbox"
+                              checked={selectedWarranties.includes(item.id)}
+                              onChange={() => handleCheckboxChange(item.id)}
+                            />
                             <span className="checkmarks" />
                           </label>
                         </td>
-                        <td className="text-gray-9"> <td>{item.warranty}</td></td>
+                        <td className="text-gray-9">
+                          {" "}
+                          <td>{item.warranty}</td>
+                        </td>
                         <td>
-                          <p className="description-para"><td>{item.description}</td></p>
+                          <p className="description-para">
+                            <td>{item.description}</td>
+                          </p>
                         </td>
                         <td>{dayjs(item.fromDate).format("YYYY-MM-DD")}</td>
                         <td> {dayjs(item.toDate).format("YYYY-MM-DD")}</td>
@@ -448,689 +532,715 @@ const Warranty = ({ show, handleClose }) => {
                         <td>{calculateDuration(item.fromDate, item.toDate)}</td>
                         <td>
                           <span
-                            className={`badge table-badge fw-medium fs-10  ${item.status ? "badge-success" : "badge-danger"}`}
+                            className={`badge table-badge fw-medium fs-10  ${
+                              item.status ? "badge-success" : "badge-danger"
+                            }`}
                           >
                             {item.status ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="action-table-data">
                           <div className="edit-delete-action">
-                            <a className="me-2 p-2" href="#" data-bs-toggle="modal"
-                              data-bs-target="#edit-warranty" onClick={() => handleEditOpen(item)}>
-                              <TbEdit data-feather="edit" className="feather-edit" />
+                            <a
+                              className="me-2 p-2"
+                              href="#"
+                              data-bs-toggle="modal"
+                              data-bs-target="#edit-warranty"
+                              onClick={() => handleEditOpen(item)}
+                            >
+                              <TbEdit
+                                data-feather="edit"
+                                className="feather-edit"
+                              />
                             </a>
-                            <a data-bs-toggle="modal" data-bs-target="#delete-modal" className="p-2"
-                              onClick={() => openDeleteModal(item.id)}>
-                              <TbTrash data-feather="trash-2" className="feather-trash-2" />
+                            <a
+                              data-bs-toggle="modal"
+                              data-bs-target="#delete-modal"
+                              className="p-2"
+                              onClick={() => openDeleteModal(item.id)}
+                            >
+                              <TbTrash
+                                data-feather="trash-2"
+                                className="feather-trash-2"
+                              />
                               {/* <RiDeleteBinLine /> */}
                             </a>
                           </div>
                         </td>
                       </tr>
-
                     ))}
-
-
                 </tbody>
-								</table>
-							</div>
-						</div>
-               {/* CHANGE: Fixed pagination to use filteredWarranties */}
-        <div className="d-flex justify-content-between align-items-center p-3">
-          <div className="d-flex gap-3 align-items-center">
-            <div>Rows Per Page</div>
-            <select
-              className="form-select"
-              name="rows"
-              id="rows"
-              style={{ width: "80px" }}
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-            >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-            </select>
-            <div>Entries</div>
-          </div>
-          <div className="d-flex align-items-center gap-3">
-            <button
-              className="btn"
-              style={{ border: "none", background: "transparent" }}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              aria-label="Previous Page"
-            >
-              <GoChevronLeft size={20} />
-            </button>
-            <div className="text-center downt">
-              <span>{currentPage}</span>
+              </table>
             </div>
-            <button
-              className="btn"
-              style={{ border: "none", background: "transparent" }}
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(prev + 1, Math.ceil(filteredWarranties.length / rowsPerPage))
-                )
-              }
-              disabled={currentPage === Math.ceil(filteredWarranties.length / rowsPerPage)}
-              aria-label="Next Page"
-            >
-              <GoChevronRight size={20} />
-            </button>
+          </div>
+          {/* CHANGE: Fixed pagination to use filteredWarranties */}
+          <div className="d-flex justify-content-between align-items-center p-3">
+            <div className="d-flex gap-3 align-items-center">
+              <div>Rows Per Page</div>
+              <select
+                className="form-select"
+                name="rows"
+                id="rows"
+                style={{ width: "80px" }}
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+              <div>Entries</div>
+            </div>
+            <div className="d-flex align-items-center gap-3">
+              <button
+                className="btn"
+                style={{ border: "none", background: "transparent" }}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous Page"
+              >
+                <GoChevronLeft size={20} />
+              </button>
+              <div className="text-center downt">
+                <span>{currentPage}</span>
+              </div>
+              <button
+                className="btn"
+                style={{ border: "none", background: "transparent" }}
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(
+                      prev + 1,
+                      Math.ceil(filteredWarranties.length / rowsPerPage)
+                    )
+                  )
+                }
+                disabled={
+                  currentPage ===
+                  Math.ceil(filteredWarranties.length / rowsPerPage)
+                }
+                aria-label="Next Page"
+              >
+                <GoChevronRight size={20} />
+              </button>
+            </div>
           </div>
         </div>
-					</div>
-					{/* /add modal list */}
-            <Modal show={showModal} onHide={handleCloses} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Add Warranty</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="warranty">
-              <Form.Label>
-                Warranty <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter warranty"
-                name="warranty"
-                value={formData.warranty}
-                onChange={handleChange}
-              />
-            </Form.Group>
+        {/* /add modal list */}
+        <Modal show={showModal} onHide={handleCloses} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Add Warranty</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="warranty">
+                <Form.Label>
+                  Warranty <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Enter warranty"
+                  name="warranty"
+                  value={formData.warranty}
+                  onChange={handleChange}
+                />
+              </Form.Group>
 
-            {/* //to date */}
-            <Row className="mt-3">
-              <Col>
-                <Form.Group controlId="fromDate">
-                  <Form.Label>
-                    From Date  <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="Date"
-                    min={1}
-                    name="fromDate"
-                    value={formData.fromDate}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="toDate">
-                  <Form.Label>
-                    To Date  <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="Date"
-                    min={1}
-                    name="toDate"
-                    value={formData.toDate}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+              {/* //to date */}
+              <Row className="mt-3">
+                <Col>
+                  <Form.Group controlId="fromDate">
+                    <Form.Label>
+                      From Date <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="Date"
+                      min={1}
+                      name="fromDate"
+                      value={formData.fromDate}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col>
+                  <Form.Group controlId="toDate">
+                    <Form.Label>
+                      To Date <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="Date"
+                      min={1}
+                      name="toDate"
+                      value={formData.toDate}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
 
-            <Row className="mt-3">
-              <Col>
-                <Form.Group controlId="description">
-                  <Form.Label>
-                    Description <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group
-              controlId="status"
-              className="mt-4 d-flex align-items-center justify-content-between"
-            >
-              <Form.Label className="me-3 mb-0">Status</Form.Label>
-              <Form.Check
-                type="switch"
-                name="status"
-                checked={formData.status}
-                onChange={handleChange}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="dark" onClick={handleCloses}>
-            Cancel
-          </Button>
-          <Button variant="warning text-white" onClick={handleSubmit}>
-            Add Warranty
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      {/* editmodal */}
-      <Modal show={showEditModal} onHide={handleEditClose} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Edit Warranty</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="editWarranty">
-              <Form.Label>
-                Warranty <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                type="text"
-                name="warranty"
-                value={editFormData.warranty}
-                onChange={handleEditChange}
-              />
-            </Form.Group>
-            <Row className="mt-3">
-              <Col>
-                <Form.Group controlId="editDuration">
-                  <Form.Label>
-                    Duration <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="duration"
-                    value={editFormData.duration}
-                    onChange={handleEditChange}
-                    readOnly
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Row className="mt-3">
-              <Col>
-                <Form.Group controlId="fromDate">
-                  <Form.Label>
-                    From Date  <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="Date"
-                    min={1}
-                    name="fromDate"
-                    value={editFormData.fromDate}
-                    onChange={handleEditChange}
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group controlId="toDate">
-                  <Form.Label>
-                    To Date  <span className="text-danger">*</span>
-                  </Form.Label>
-                  <Form.Control
-                    type="Date"
-                    min={1}
-                    name="toDate"
-                    value={editFormData.toDate}
-                    onChange={handleEditChange}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group controlId="editDescription" className="mt-3">
-              <Form.Label>
-                Description <span className="text-danger">*</span>
-              </Form.Label>
-              <Form.Control
-                as="textarea"
-                name="description"
-                value={editFormData.description}
-                onChange={handleEditChange}
-              />
-            </Form.Group>
-            <Form.Group
-              controlId="editStatus"
-              className="mt-4 d-flex align-items-center justify-content-between"
-            >
-              <Form.Label className="me-3 mb-0">Status</Form.Label>
-              <Form.Check
-                type="switch"
-                name="status"
-                checked={editFormData.status}
-                onChange={handleEditChange}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="dark" onClick={handleEditClose}>
-            Cancel
-          </Button>
-          <Button variant="warning" onClick={handleEditSubmit}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      {/* delete modal*/}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Body className="text-center py-4">
-          <div className="d-flex justify-content-center mb-3">
-            <div className="bg-danger bg-opacity-10 rounded-circle p-3">
-              <RiDeleteBinLine size={28} className="text-danger" />
-            </div>
-          </div>
-          <h5 className="fw-bold">Delete Warranty</h5>
-          <p>Are you sure you want to delete warranty?</p>
-          <div className="d-flex justify-content-center gap-3 mt-4">
-            <Button variant="dark" onClick={() => setShowDeleteModal(false)}>
+              <Row className="mt-3">
+                <Col>
+                  <Form.Group controlId="description">
+                    <Form.Label>
+                      Description <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Form.Group
+                controlId="status"
+                className="mt-4 d-flex align-items-center justify-content-between"
+              >
+                <Form.Label className="me-3 mb-0">Status</Form.Label>
+                <Form.Check
+                  type="switch"
+                  name="status"
+                  checked={formData.status}
+                  onChange={handleChange}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="dark" onClick={handleCloses}>
               Cancel
             </Button>
-            <Button variant="warning" onClick={() => handleDelete(pendingDeleteId)}>
-              Yes Delete
+            <Button variant="warning text-white" onClick={handleSubmit}>
+              Add Warranty
             </Button>
-          </div>
-        </Modal.Body>
-      </Modal>
-				</div>
-				
-			</div>
-    // <div className="fn-conatiner">
-    //   {Error && <div className="alert alert-danger">{Error}</div>}
-    //   <div className="d-flex bd-highlight justify-content-between align-items-start">
-    //     <div className="p-3 mt-3 flex-grow-1">
-    //       <div className="h4">Warranties</div>
-    //       <div className="text-secondary">Manage your Warranties</div>
-    //     </div>
-    //     <div className="d-flex align-items-center gap-1 p-4 mt-3">
-    //       <Button
-    //         className="text-danger"
-    //         variant="light"
-    //         aria-label="Export as PDF"
-    //         onClick={handleExportPDF}
-    //       >
-    //         <BiSolidFilePdf size={24} />
-    //       </Button>
-    //       <Button
-    //         className="text-success"
-    //         variant="light"
-    //         aria-label="Export as Excel"
-    //         onClick={handleExportExcel}
-    //       >
-    //         <BiSolidFilePdf size={24} />
-    //       </Button>
-
-    //       <Button
-    //         variant="light"
-    //         aria-label="Refresh"
-    //         className="text-secondary"
-    //         onClick={() => {
-
-    //           fetchWarranties();
-    //         }}
-    //       >
-    //         <HiOutlineRefresh size={20} />
-    //       </Button>
-    //       <Button
-    //         variant="light"
-    //         aria-label="Collapse"
-    //         className="text-secondary"
-    //       >
-    //         <IoIosArrowUp size={18} />
-    //       </Button>
-    //       <Button variant="warning text-white" onClick={handleShow}>
-    //         <LuCirclePlus /> Add Warranty
-    //       </Button>
-    //     </div>
-    //   </div>
-    //   <Modal show={showModal} onHide={handleCloses} centered>
-    //     <Modal.Header closeButton>
-    //       <Modal.Title>Add Warranty</Modal.Title>
-    //     </Modal.Header>
-    //     <Modal.Body>
-    //       <Form>
-    //         <Form.Group controlId="warranty">
-    //           <Form.Label>
-    //             Warranty <span className="text-danger">*</span>
-    //           </Form.Label>
-    //           <Form.Control
-    //             type="text"
-    //             placeholder="Enter warranty"
-    //             name="warranty"
-    //             value={formData.warranty}
-    //             onChange={handleChange}
-    //           />
-    //         </Form.Group>
-
-    //         {/* //to date */}
-    //         <Row className="mt-3">
-    //           <Col>
-    //             <Form.Group controlId="fromDate">
-    //               <Form.Label>
-    //                 From Date  <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 type="Date"
-    //                 min={1}
-    //                 name="fromDate"
-    //                 value={formData.fromDate}
-    //                 onChange={handleChange}
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //           <Col>
-    //             <Form.Group controlId="toDate">
-    //               <Form.Label>
-    //                 To Date  <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 type="Date"
-    //                 min={1}
-    //                 name="toDate"
-    //                 value={formData.toDate}
-    //                 onChange={handleChange}
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //         </Row>
-
-    //         <Row className="mt-3">
-    //           <Col>
-    //             <Form.Group controlId="description">
-    //               <Form.Label>
-    //                 Description <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 as="textarea"
-    //                 name="description"
-    //                 value={formData.description}
-    //                 onChange={handleChange}
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //         </Row>
-    //         <Form.Group
-    //           controlId="status"
-    //           className="mt-4 d-flex align-items-center justify-content-between"
-    //         >
-    //           <Form.Label className="me-3 mb-0">Status</Form.Label>
-    //           <Form.Check
-    //             type="switch"
-    //             name="status"
-    //             checked={formData.status}
-    //             onChange={handleChange}
-    //           />
-    //         </Form.Group>
-    //       </Form>
-    //     </Modal.Body>
-    //     <Modal.Footer>
-    //       <Button variant="dark" onClick={handleCloses}>
-    //         Cancel
-    //       </Button>
-    //       <Button variant="warning text-white" onClick={handleSubmit}>
-    //         Add Warranty
-    //       </Button>
-    //     </Modal.Footer>
-    //   </Modal>
-    //   <Modal show={showEditModal} onHide={handleEditClose} centered>
-    //     <Modal.Header closeButton>
-    //       <Modal.Title>Edit Warranty</Modal.Title>
-    //     </Modal.Header>
-    //     <Modal.Body>
-    //       <Form>
-    //         <Form.Group controlId="editWarranty">
-    //           <Form.Label>
-    //             Warranty <span className="text-danger">*</span>
-    //           </Form.Label>
-    //           <Form.Control
-    //             type="text"
-    //             name="warranty"
-    //             value={editFormData.warranty}
-    //             onChange={handleEditChange}
-    //           />
-    //         </Form.Group>
-    //         <Row className="mt-3">
-    //           <Col>
-    //             <Form.Group controlId="editDuration">
-    //               <Form.Label>
-    //                 Duration <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 type="text"
-    //                 name="duration"
-    //                 value={editFormData.duration}
-    //                 onChange={handleEditChange}
-    //                 readOnly
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //         </Row>
-    //         <Row className="mt-3">
-    //           <Col>
-    //             <Form.Group controlId="fromDate">
-    //               <Form.Label>
-    //                 From Date  <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 type="Date"
-    //                 min={1}
-    //                 name="fromDate"
-    //                 value={editFormData.fromDate}
-    //                 onChange={handleEditChange}
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //           <Col>
-    //             <Form.Group controlId="toDate">
-    //               <Form.Label>
-    //                 To Date  <span className="text-danger">*</span>
-    //               </Form.Label>
-    //               <Form.Control
-    //                 type="Date"
-    //                 min={1}
-    //                 name="toDate"
-    //                 value={editFormData.toDate}
-    //                 onChange={handleEditChange}
-    //               />
-    //             </Form.Group>
-    //           </Col>
-    //         </Row>
-    //         <Form.Group controlId="editDescription" className="mt-3">
-    //           <Form.Label>
-    //             Description <span className="text-danger">*</span>
-    //           </Form.Label>
-    //           <Form.Control
-    //             as="textarea"
-    //             name="description"
-    //             value={editFormData.description}
-    //             onChange={handleEditChange}
-    //           />
-    //         </Form.Group>
-    //         <Form.Group
-    //           controlId="editStatus"
-    //           className="mt-4 d-flex align-items-center justify-content-between"
-    //         >
-    //           <Form.Label className="me-3 mb-0">Status</Form.Label>
-    //           <Form.Check
-    //             type="switch"
-    //             name="status"
-    //             checked={editFormData.status}
-    //             onChange={handleEditChange}
-    //           />
-    //         </Form.Group>
-    //       </Form>
-    //     </Modal.Body>
-    //     <Modal.Footer>
-    //       <Button variant="dark" onClick={handleEditClose}>
-    //         Cancel
-    //       </Button>
-    //       <Button variant="warning" onClick={handleEditSubmit}>
-    //         Save Changes
-    //       </Button>
-    //     </Modal.Footer>
-    //   </Modal>
-    //   <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-    //     <Modal.Body className="text-center py-4">
-    //       <div className="d-flex justify-content-center mb-3">
-    //         <div className="bg-danger bg-opacity-10 rounded-circle p-3">
-    //           <RiDeleteBinLine size={28} className="text-danger" />
-    //         </div>
-    //       </div>
-    //       <h5 className="fw-bold">Delete Warranty</h5>
-    //       <p>Are you sure you want to delete warranty?</p>
-    //       <div className="d-flex justify-content-center gap-3 mt-4">
-    //         <Button variant="dark" onClick={() => setShowDeleteModal(false)}>
-    //           Cancel
-    //         </Button>
-    //         <Button variant="warning" onClick={() => handleDelete(pendingDeleteId)}>
-    //           Yes Delete
-    //         </Button>
-    //       </div>
-    //     </Modal.Body>
-    //   </Modal>
-    //   <div className="container-mn">
-    //     <div className="d-flex justify-content-between align-items-center p-3">
-    //       <div>
-    //         <div className="input-group rounded">
-    //           <input
-    //             type="search"
-    //             className="form-control rounded"
-    //             placeholder="🔍︎ Search"
-    //             aria-label="Search"
-    //             aria-describedby="search-addon"
-    //             value={searchTerm}
-    //             onChange={(e) => setSearchTerm(e.target.value)}
-    //           />
-    //         </div>
-    //       </div>
-    //       <div className="d-flex gap-3">
-
-    //         <select
-    //           className="form-select"
-    //           value={statusFilter}
-    //           aria-label="Default select example"
-    //           onChange={(e) => setStatusFilter(e.target.value)}
-    //         >
-    //           <option value="all">All Statuses</option>
-    //           <option value="active">Active</option>
-    //           <option value="inactive">Inactive</option>
-    //         </select>
-    //       </div>
-    //     </div>
-    //     <div>
-    //       <table className="table" ref={tableRef}>
-    //         <thead className="tableheader">
-    //           <tr>
-    //             <th scope="col">
-    //               <input type="checkbox" />
-    //             </th>
-    //             <th scope="col">Warranty</th>
-    //             <th scope="col">Description</th>
-    //             <th scope="col">Duration</th>
-    //             <th scope="col">To Date</th>
-    //             <th scope="col">From Date</th>
-    //             <th scope="col">Status</th>
-    //             <th></th>
-    //           </tr>
-    //         </thead>
-    //         <tbody>
-    //           {filteredWarranties
-    //             .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
-    //             .map((item, idx) => (
-    //               <tr key={idx}>
-    //                 <th scope="col">
-    //                   <input type="checkbox" />
-    //                 </th>
-    //                 <td>{item.warranty}</td>
-    //                 <td>{item.description}</td>
-    //                 {/* <td>{`${item.duration}`}</td> */}
-    //                 <td>{calculateDuration(item.fromDate, item.toDate)}</td>
-    //                 <td> {dayjs(item.toDate).format("YYYY-MM-DD")}</td>
-    //                 <td>{dayjs(item.fromDate).format("YYYY-MM-DD")}</td>
-    //                 <td>
-
-    //                   <span
-    //                     className={`badge ${item.status ? "badge-success" : "badge-danger"}`}
-    //                   >
-    //                     {item.status ? "Active" : "Inactive"}
-    //                   </span>
-    //                 </td>
-    //                 <td>
-    //                   <div className="iconsms">
-    //                     <button>
-    //                       <IoEyeOutline />
-    //                     </button>
-
-    //                     <button onClick={() => handleEditOpen(item)}>
-    //                       <FiEdit />
-    //                     </button>
-    //                     <button onClick={() => openDeleteModal(item.id)}>
-    //                       <RiDeleteBinLine />
-    //                     </button>
-    //                   </div>
-    //                 </td>
-    //               </tr>
-    //             ))}
-    //         </tbody>
-    //       </table>
-    //     </div>
-    //     {/* CHANGE: Fixed pagination to use filteredWarranties */}
-    //     <div className="d-flex justify-content-between align-items-center p-3">
-    //       <div className="d-flex gap-3 align-items-center">
-    //         <div>Rows Per Page</div>
-    //         <select
-    //           className="form-select"
-    //           name="rows"
-    //           id="rows"
-    //           style={{ width: "80px" }}
-    //           value={rowsPerPage}
-    //           onChange={(e) => {
-    //             setRowsPerPage(Number(e.target.value));
-    //             setCurrentPage(1);
-    //           }}
-    //         >
-    //           <option value="5">5</option>
-    //           <option value="10">10</option>
-    //           <option value="20">20</option>
-    //         </select>
-    //         <div>Entries</div>
-    //       </div>
-    //       <div className="d-flex align-items-center gap-3">
-    //         <button
-    //           className="btn"
-    //           style={{ border: "none", background: "transparent" }}
-    //           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-    //           disabled={currentPage === 1}
-    //           aria-label="Previous Page"
-    //         >
-    //           <GoChevronLeft size={20} />
-    //         </button>
-    //         <div className="text-center downt">
-    //           <span>{currentPage}</span>
-    //         </div>
-    //         <button
-    //           className="btn"
-    //           style={{ border: "none", background: "transparent" }}
-    //           onClick={() =>
-    //             setCurrentPage((prev) =>
-    //               Math.min(prev + 1, Math.ceil(filteredWarranties.length / rowsPerPage))
-    //             )
-    //           }
-    //           disabled={currentPage === Math.ceil(filteredWarranties.length / rowsPerPage)}
-    //           aria-label="Next Page"
-    //         >
-    //           <GoChevronRight size={20} />
-    //         </button>
-    //       </div>
-    //     </div>
-    //   </div>
-    //   {/* <div className="settings">
-    //     <IoSettingsSharp />
-    //   </div> */}
-    // </div>
+          </Modal.Footer>
+        </Modal>
+        {/* editmodal */}
+        <Modal show={showEditModal} onHide={handleEditClose} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit Warranty</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="editWarranty">
+                <Form.Label>
+                  Warranty <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="warranty"
+                  value={editFormData.warranty}
+                  onChange={handleEditChange}
+                />
+              </Form.Group>
+              <Row className="mt-3">
+                <Col>
+                  <Form.Group controlId="editDuration">
+                    <Form.Label>
+                      Duration <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="duration"
+                      value={editFormData.duration}
+                      onChange={handleEditChange}
+                      readOnly
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Row className="mt-3">
+                <Col>
+                  <Form.Group controlId="fromDate">
+                    <Form.Label>
+                      From Date <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="Date"
+                      min={1}
+                      name="fromDate"
+                      value={editFormData.fromDate}
+                      onChange={handleEditChange}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col>
+                  <Form.Group controlId="toDate">
+                    <Form.Label>
+                      To Date <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="Date"
+                      min={1}
+                      name="toDate"
+                      value={editFormData.toDate}
+                      onChange={handleEditChange}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Form.Group controlId="editDescription" className="mt-3">
+                <Form.Label>
+                  Description <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  as="textarea"
+                  name="description"
+                  value={editFormData.description}
+                  onChange={handleEditChange}
+                />
+              </Form.Group>
+              <Form.Group
+                controlId="editStatus"
+                className="mt-4 d-flex align-items-center justify-content-between"
+              >
+                <Form.Label className="me-3 mb-0">Status</Form.Label>
+                <Form.Check
+                  type="switch"
+                  name="status"
+                  checked={editFormData.status}
+                  onChange={handleEditChange}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="dark" onClick={handleEditClose}>
+              Cancel
+            </Button>
+            <Button variant="warning" onClick={handleEditSubmit}>
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        {/* delete modal*/}
+        <Modal
+          show={showDeleteModal}
+          onHide={() => setShowDeleteModal(false)}
+          centered
+        >
+          <Modal.Body className="text-center py-4">
+            <div className="d-flex justify-content-center mb-3">
+              <div className="bg-danger bg-opacity-10 rounded-circle p-3">
+                <RiDeleteBinLine size={28} className="text-danger" />
+              </div>
+            </div>
+            <h5 className="fw-bold">Delete Warranty</h5>
+            <p>Are you sure you want to delete warranty?</p>
+            <div className="d-flex justify-content-center gap-3 mt-4">
+              <Button variant="dark" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="warning"
+                onClick={() => handleDelete(pendingDeleteId)}
+              >
+                Yes Delete
+              </Button>
+            </div>
+          </Modal.Body>
+        </Modal>
+      </div>
+    </div>
   );
 };
 
 export default Warranty;
 
+// <div className="fn-conatiner">
+//   {Error && <div className="alert alert-danger">{Error}</div>}
+//   <div className="d-flex bd-highlight justify-content-between align-items-start">
+//     <div className="p-3 mt-3 flex-grow-1">
+//       <div className="h4">Warranties</div>
+//       <div className="text-secondary">Manage your Warranties</div>
+//     </div>
+//     <div className="d-flex align-items-center gap-1 p-4 mt-3">
+//       <Button
+//         className="text-danger"
+//         variant="light"
+//         aria-label="Export as PDF"
+//         onClick={handleExportPDF}
+//       >
+//         <BiSolidFilePdf size={24} />
+//       </Button>
+//       <Button
+//         className="text-success"
+//         variant="light"
+//         aria-label="Export as Excel"
+//         onClick={handleExportExcel}
+//       >
+//         <BiSolidFilePdf size={24} />
+//       </Button>
+
+//       <Button
+//         variant="light"
+//         aria-label="Refresh"
+//         className="text-secondary"
+//         onClick={() => {
+
+//           fetchWarranties();
+//         }}
+//       >
+//         <HiOutlineRefresh size={20} />
+//       </Button>
+//       <Button
+//         variant="light"
+//         aria-label="Collapse"
+//         className="text-secondary"
+//       >
+//         <IoIosArrowUp size={18} />
+//       </Button>
+//       <Button variant="warning text-white" onClick={handleShow}>
+//         <LuCirclePlus /> Add Warranty
+//       </Button>
+//     </div>
+//   </div>
+//   <Modal show={showModal} onHide={handleCloses} centered>
+//     <Modal.Header closeButton>
+//       <Modal.Title>Add Warranty</Modal.Title>
+//     </Modal.Header>
+//     <Modal.Body>
+//       <Form>
+//         <Form.Group controlId="warranty">
+//           <Form.Label>
+//             Warranty <span className="text-danger">*</span>
+//           </Form.Label>
+//           <Form.Control
+//             type="text"
+//             placeholder="Enter warranty"
+//             name="warranty"
+//             value={formData.warranty}
+//             onChange={handleChange}
+//           />
+//         </Form.Group>
+
+//         {/* //to date */}
+//         <Row className="mt-3">
+//           <Col>
+//             <Form.Group controlId="fromDate">
+//               <Form.Label>
+//                 From Date  <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 type="Date"
+//                 min={1}
+//                 name="fromDate"
+//                 value={formData.fromDate}
+//                 onChange={handleChange}
+//               />
+//             </Form.Group>
+//           </Col>
+//           <Col>
+//             <Form.Group controlId="toDate">
+//               <Form.Label>
+//                 To Date  <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 type="Date"
+//                 min={1}
+//                 name="toDate"
+//                 value={formData.toDate}
+//                 onChange={handleChange}
+//               />
+//             </Form.Group>
+//           </Col>
+//         </Row>
+
+//         <Row className="mt-3">
+//           <Col>
+//             <Form.Group controlId="description">
+//               <Form.Label>
+//                 Description <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 as="textarea"
+//                 name="description"
+//                 value={formData.description}
+//                 onChange={handleChange}
+//               />
+//             </Form.Group>
+//           </Col>
+//         </Row>
+//         <Form.Group
+//           controlId="status"
+//           className="mt-4 d-flex align-items-center justify-content-between"
+//         >
+//           <Form.Label className="me-3 mb-0">Status</Form.Label>
+//           <Form.Check
+//             type="switch"
+//             name="status"
+//             checked={formData.status}
+//             onChange={handleChange}
+//           />
+//         </Form.Group>
+//       </Form>
+//     </Modal.Body>
+//     <Modal.Footer>
+//       <Button variant="dark" onClick={handleCloses}>
+//         Cancel
+//       </Button>
+//       <Button variant="warning text-white" onClick={handleSubmit}>
+//         Add Warranty
+//       </Button>
+//     </Modal.Footer>
+//   </Modal>
+//   <Modal show={showEditModal} onHide={handleEditClose} centered>
+//     <Modal.Header closeButton>
+//       <Modal.Title>Edit Warranty</Modal.Title>
+//     </Modal.Header>
+//     <Modal.Body>
+//       <Form>
+//         <Form.Group controlId="editWarranty">
+//           <Form.Label>
+//             Warranty <span className="text-danger">*</span>
+//           </Form.Label>
+//           <Form.Control
+//             type="text"
+//             name="warranty"
+//             value={editFormData.warranty}
+//             onChange={handleEditChange}
+//           />
+//         </Form.Group>
+//         <Row className="mt-3">
+//           <Col>
+//             <Form.Group controlId="editDuration">
+//               <Form.Label>
+//                 Duration <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 type="text"
+//                 name="duration"
+//                 value={editFormData.duration}
+//                 onChange={handleEditChange}
+//                 readOnly
+//               />
+//             </Form.Group>
+//           </Col>
+//         </Row>
+//         <Row className="mt-3">
+//           <Col>
+//             <Form.Group controlId="fromDate">
+//               <Form.Label>
+//                 From Date  <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 type="Date"
+//                 min={1}
+//                 name="fromDate"
+//                 value={editFormData.fromDate}
+//                 onChange={handleEditChange}
+//               />
+//             </Form.Group>
+//           </Col>
+//           <Col>
+//             <Form.Group controlId="toDate">
+//               <Form.Label>
+//                 To Date  <span className="text-danger">*</span>
+//               </Form.Label>
+//               <Form.Control
+//                 type="Date"
+//                 min={1}
+//                 name="toDate"
+//                 value={editFormData.toDate}
+//                 onChange={handleEditChange}
+//               />
+//             </Form.Group>
+//           </Col>
+//         </Row>
+//         <Form.Group controlId="editDescription" className="mt-3">
+//           <Form.Label>
+//             Description <span className="text-danger">*</span>
+//           </Form.Label>
+//           <Form.Control
+//             as="textarea"
+//             name="description"
+//             value={editFormData.description}
+//             onChange={handleEditChange}
+//           />
+//         </Form.Group>
+//         <Form.Group
+//           controlId="editStatus"
+//           className="mt-4 d-flex align-items-center justify-content-between"
+//         >
+//           <Form.Label className="me-3 mb-0">Status</Form.Label>
+//           <Form.Check
+//             type="switch"
+//             name="status"
+//             checked={editFormData.status}
+//             onChange={handleEditChange}
+//           />
+//         </Form.Group>
+//       </Form>
+//     </Modal.Body>
+//     <Modal.Footer>
+//       <Button variant="dark" onClick={handleEditClose}>
+//         Cancel
+//       </Button>
+//       <Button variant="warning" onClick={handleEditSubmit}>
+//         Save Changes
+//       </Button>
+//     </Modal.Footer>
+//   </Modal>
+//   <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+//     <Modal.Body className="text-center py-4">
+//       <div className="d-flex justify-content-center mb-3">
+//         <div className="bg-danger bg-opacity-10 rounded-circle p-3">
+//           <RiDeleteBinLine size={28} className="text-danger" />
+//         </div>
+//       </div>
+//       <h5 className="fw-bold">Delete Warranty</h5>
+//       <p>Are you sure you want to delete warranty?</p>
+//       <div className="d-flex justify-content-center gap-3 mt-4">
+//         <Button variant="dark" onClick={() => setShowDeleteModal(false)}>
+//           Cancel
+//         </Button>
+//         <Button variant="warning" onClick={() => handleDelete(pendingDeleteId)}>
+//           Yes Delete
+//         </Button>
+//       </div>
+//     </Modal.Body>
+//   </Modal>
+//   <div className="container-mn">
+//     <div className="d-flex justify-content-between align-items-center p-3">
+//       <div>
+//         <div className="input-group rounded">
+//           <input
+//             type="search"
+//             className="form-control rounded"
+//             placeholder="🔍︎ Search"
+//             aria-label="Search"
+//             aria-describedby="search-addon"
+//             value={searchTerm}
+//             onChange={(e) => setSearchTerm(e.target.value)}
+//           />
+//         </div>
+//       </div>
+//       <div className="d-flex gap-3">
+
+//         <select
+//           className="form-select"
+//           value={statusFilter}
+//           aria-label="Default select example"
+//           onChange={(e) => setStatusFilter(e.target.value)}
+//         >
+//           <option value="all">All Statuses</option>
+//           <option value="active">Active</option>
+//           <option value="inactive">Inactive</option>
+//         </select>
+//       </div>
+//     </div>
+//     <div>
+//       <table className="table" ref={tableRef}>
+//         <thead className="tableheader">
+//           <tr>
+//             <th scope="col">
+//               <input type="checkbox" />
+//             </th>
+//             <th scope="col">Warranty</th>
+//             <th scope="col">Description</th>
+//             <th scope="col">Duration</th>
+//             <th scope="col">To Date</th>
+//             <th scope="col">From Date</th>
+//             <th scope="col">Status</th>
+//             <th></th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {filteredWarranties
+//             .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+//             .map((item, idx) => (
+//               <tr key={idx}>
+//                 <th scope="col">
+//                   <input type="checkbox" />
+//                 </th>
+//                 <td>{item.warranty}</td>
+//                 <td>{item.description}</td>
+//                 {/* <td>{`${item.duration}`}</td> */}
+//                 <td>{calculateDuration(item.fromDate, item.toDate)}</td>
+//                 <td> {dayjs(item.toDate).format("YYYY-MM-DD")}</td>
+//                 <td>{dayjs(item.fromDate).format("YYYY-MM-DD")}</td>
+//                 <td>
+
+//                   <span
+//                     className={`badge ${item.status ? "badge-success" : "badge-danger"}`}
+//                   >
+//                     {item.status ? "Active" : "Inactive"}
+//                   </span>
+//                 </td>
+//                 <td>
+//                   <div className="iconsms">
+//                     <button>
+//                       <IoEyeOutline />
+//                     </button>
+
+//                     <button onClick={() => handleEditOpen(item)}>
+//                       <FiEdit />
+//                     </button>
+//                     <button onClick={() => openDeleteModal(item.id)}>
+//                       <RiDeleteBinLine />
+//                     </button>
+//                   </div>
+//                 </td>
+//               </tr>
+//             ))}
+//         </tbody>
+//       </table>
+//     </div>
+//     {/* CHANGE: Fixed pagination to use filteredWarranties */}
+//     <div className="d-flex justify-content-between align-items-center p-3">
+//       <div className="d-flex gap-3 align-items-center">
+//         <div>Rows Per Page</div>
+//         <select
+//           className="form-select"
+//           name="rows"
+//           id="rows"
+//           style={{ width: "80px" }}
+//           value={rowsPerPage}
+//           onChange={(e) => {
+//             setRowsPerPage(Number(e.target.value));
+//             setCurrentPage(1);
+//           }}
+//         >
+//           <option value="5">5</option>
+//           <option value="10">10</option>
+//           <option value="20">20</option>
+//         </select>
+//         <div>Entries</div>
+//       </div>
+//       <div className="d-flex align-items-center gap-3">
+//         <button
+//           className="btn"
+//           style={{ border: "none", background: "transparent" }}
+//           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+//           disabled={currentPage === 1}
+//           aria-label="Previous Page"
+//         >
+//           <GoChevronLeft size={20} />
+//         </button>
+//         <div className="text-center downt">
+//           <span>{currentPage}</span>
+//         </div>
+//         <button
+//           className="btn"
+//           style={{ border: "none", background: "transparent" }}
+//           onClick={() =>
+//             setCurrentPage((prev) =>
+//               Math.min(prev + 1, Math.ceil(filteredWarranties.length / rowsPerPage))
+//             )
+//           }
+//           disabled={currentPage === Math.ceil(filteredWarranties.length / rowsPerPage)}
+//           aria-label="Next Page"
+//         >
+//           <GoChevronRight size={20} />
+//         </button>
+//       </div>
+//     </div>
+//   </div>
+//   {/* <div className="settings">
+//     <IoSettingsSharp />
+//   </div> */}
+// </div>
