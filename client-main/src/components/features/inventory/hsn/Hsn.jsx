@@ -19,6 +19,9 @@ const HSNList = () => {
   const [showModal, setShowModal] = useState(false);
    const [errors, setErrors] = useState({});
    const hsnRegex = /^[0-9]{2,8}$/;
+   // === BULK DELETE STATE ===
+const [selectedHSN, setSelectedHSN] = useState([]);
+
 
   useEffect(() => { load(); }, [page, limit, search]);
 
@@ -142,6 +145,47 @@ const HSNList = () => {
     setShowModal(true);
   };
 
+  // === BULK DELETE HANDLERS ===
+const handleCheckboxChange = (id) => {
+  setSelectedHSN((prev) =>
+    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  );
+};
+
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = data.map((item) => item._id); // current page data
+    setSelectedHSN(allIds);
+  } else {
+    setSelectedHSN([]);
+  }
+};
+
+// bulk delete start from here
+
+const handleBulkDelete = async () => {
+  if (selectedHSN.length === 0) return;
+  if (!window.confirm(`Delete ${selectedHSN.length} selected HSN records?`)) return;
+
+  try {
+    await Promise.all(
+      selectedHSN.map((id) => axios.delete(`${BASE_URL}/api/hsn/${id}`))
+    );
+    toast.success("Selected HSNs deleted");
+    setSelectedHSN([]);
+    load();
+  } catch (err) {
+    console.error("Bulk delete error:", err);
+    toast.error("Failed to delete selected HSNs");
+  }
+};
+
+useEffect(() => {
+  setSelectedHSN((prev) => prev.filter((id) => data.some((d) => d._id === id)));
+}, [data]);
+
+
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -153,6 +197,15 @@ const HSNList = () => {
             </div>
           </div>
           <div className="table-top-head me-2">
+            <li>
+             
+{selectedHSN.length > 0 && (
+  <button className="btn btn-danger me-2" onClick={handleBulkDelete}>
+    Delete ({selectedHSN.length}) Selected
+  </button>
+)}
+
+            </li>
             <li>
               <button type="button" className="icon-btn" title="Pdf">
                 <FaFilePdf />
@@ -210,7 +263,8 @@ const HSNList = () => {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input type="checkbox" id="select-all"  checked={data.length > 0 && selectedHSN.length === data.length}
+  onChange={handleSelectAll} />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -230,7 +284,8 @@ const HSNList = () => {
                       <tr key={hsn._id}>
                         <td>
                           <label className="checkboxs">
-                            <input type="checkbox" />
+                            <input type="checkbox"   checked={selectedHSN.includes(hsn._id)}
+  onChange={() => handleCheckboxChange(hsn._id)} />
                             <span className="checkmarks" />
                           </label>
                         </td>
