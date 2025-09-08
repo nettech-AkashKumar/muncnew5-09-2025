@@ -21,6 +21,11 @@ const Units = () => {
   const [status, setStatus] = useState(true); // true = Active
   const [errors, setErrors] = useState({})
 
+  // === START BULK DELETE STATE CHANGES ===
+// const [selectedUnits, setSelectedUnits] = useState([]);
+const [selectAll, setSelectAll] = useState(false); 
+
+
   const unitNameRegex = /^[A-Za-z\s]{2,50}$/;   
   const shortNameRegex = /^[A-Za-z]{1,10}$/; 
 
@@ -95,8 +100,10 @@ const Units = () => {
     if (e.target.checked) {
       const allIds = unitData.map((unit) => unit._id);
       setSelectedUnits(allIds);
+       setSelectAll(true);
     } else {
       setSelectedUnits([]);
+      setSelectAll(false);
     }
   };
 
@@ -153,6 +160,45 @@ const Units = () => {
     }
   };
 
+  // === START BULK DELETE FUNCTION ===
+const handleBulkDelete = async () => {
+  if (selectedUnits.length === 0) return;
+
+  const confirmed = await DeleteAlert({});
+  if (!confirmed) return;
+
+  try {
+    const token = localStorage.getItem("token");
+
+    // Option A: if backend supports a bulk API endpoint, prefer this:
+    // await axios.post(`${BASE_URL}/api/unit/units/bulk-delete`, { ids: selectedUnits }, { headers: { Authorization: `Bearer ${token}` }});
+
+    // Option B: fallback to multiple delete calls (current safe approach)
+    await Promise.all(
+      selectedUnits.map((id) =>
+        axios.delete(`${BASE_URL}/api/unit/units/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      )
+    );
+
+    toast.success("Selected units deleted successfully");
+    setSelectedUnits([]);
+    setSelectAll(false);
+    fetchUnits(); 
+  } catch (error) {
+    console.error("Bulk Delete Units Error:", error.response?.data || error.message);
+    toast.error("Failed to delete selected units");
+  }
+};
+
+
+  useEffect(() => {
+  setSelectedUnits((prev) => prev.filter((id) => unitData.some((u) => u._id === id)));
+
+}, [unitData]);
+
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -196,6 +242,13 @@ const Units = () => {
           </ul> */}
 
           <div className="table-top-head me-2">
+            <li>
+              {selectedUnits.length > 0 && (
+  <button className="btn btn-danger ms-2" onClick={handleBulkDelete}>
+    Delete ({selectedUnits.length}) Selected
+  </button>
+)}
+            </li>
             <li>
               <button
                 type="button"
@@ -284,6 +337,7 @@ const Units = () => {
                         <input
                           type="checkbox"
                           id="select-all"
+                           checked={unitData.length > 0 && selectedUnits.length === unitData.length}
                           onChange={handleSelectAll}
                         />
                         <span className="checkmarks" />
