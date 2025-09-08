@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BASE_URL from '../../pages/config/config';
 import { toast } from 'react-toastify';
-// import '../../styles/OtpVerification.css'
+import '../../settings/styles/OtpVerification.css'
 
 const OtpVerification = () => {
   const location = useLocation();
