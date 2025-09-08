@@ -9,8 +9,6 @@ const DeviceSession = require("../models/settings/DeviceManagementmodal")
 
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
-
-  
   try {
     const user = await User.findOne({ email:email.toLowerCase() }).populate("role");
 

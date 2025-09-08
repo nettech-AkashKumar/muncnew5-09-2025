@@ -16,6 +16,8 @@ const Login = () => {
     email: '',
     password: '',
   });
+  const [rememberMe,setRememberMe] = useState(false)  //state for remember me
+  
   // state for two factor authentication
   const [otpStep, setOtpStep] = useState(false)
   const [otp, setOtp] = useState("")

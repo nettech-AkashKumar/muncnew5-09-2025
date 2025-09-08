@@ -5,6 +5,8 @@ const {
   logoutUser,
   forgotPassword,
   verifyOtpAndReset,
+  verifyotp,
+  logDevice
 } = require("../controllers/authController"); // Or move these to a separate `authController`
 
 // Login
@@ -18,5 +20,9 @@ router.post("/forgot-password", forgotPassword);
 
 // Verify OTP and reset password
 router.post("/verify-otp-reset", verifyOtpAndReset);
+
+router.post("/verify-otp", verifyotp);
+
+router.post("/log-device", logDevice);
 
 module.exports = router;

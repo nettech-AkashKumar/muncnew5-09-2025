@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route ,Navigate} from "react-router-dom";
 import Login from "../components/auth/Login/Login";
 import Register from "../components/auth/Register/Register";
+import OtpVerification from "../components/auth/OtpVerification.jsx";
 import ForgotPassword from "../components/auth/ForgotPassword/ForgotPassword";
 import Dashboard from "../components/Dashboard/Admin/AdminDashboard";
 import AuthLayout from "../components/layouts/autlayout/AuthLayout";
@@ -155,14 +156,14 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
-      {/* <Route
+      <Route
         path="/otp"
         element={
           <PublicRoute>
             <OtpVerification />
           </PublicRoute>
         }
-      /> */}
+      />
       <Route
         path="/register"
         element={
