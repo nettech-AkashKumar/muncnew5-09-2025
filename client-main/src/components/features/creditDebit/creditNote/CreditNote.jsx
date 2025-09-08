@@ -16,6 +16,8 @@ const DebitNote = () => {
     const [search, setSearch] = React.useState('');
     const [startDate, setStartDate] = React.useState('');
     const [endDate, setEndDate] = React.useState('');
+    const [selectedNotes, setSelectedNotes] = React.useState([]);
+
 
     const fetchNotes = React.useCallback(() => {
         setLoading(true);
@@ -57,6 +59,37 @@ const DebitNote = () => {
             alert('Failed to delete');
         }
     };
+    // Toggle single note
+const handleCheckboxChange = (id) => {
+  setSelectedNotes((prev) =>
+    prev.includes(id) ? prev.filter((noteId) => noteId !== id) : [...prev, id]
+  );
+};
+
+// Toggle select all
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    setSelectedNotes(debitNotes.map((note) => note._id));
+  } else {
+    setSelectedNotes([]);
+  }
+};
+const handleBulkDelete = async () => {
+  if (selectedNotes.length === 0) return;
+  if (!window.confirm(`Are you sure you want to delete ${selectedNotes.length} debit note(s)?`)) return;
+
+  try {
+    await Promise.all(
+      selectedNotes.map((id) => axios.delete(`${BASE_URL}/api/debit-notes/${id}`))
+    );
+    setDebitNotes((prev) => prev.filter((note) => !selectedNotes.includes(note._id)));
+    setSelectedNotes([]);
+  } catch (err) {
+    alert("Failed to delete selected notes");
+  }
+};
+
+
 
     return (
         <div className="page-wrapper">
@@ -92,6 +125,12 @@ const DebitNote = () => {
                         />
                     </div>
                     <div>
+                        {selectedNotes.length > 0 && (
+  <button className="btn btn-danger me-2" onClick={handleBulkDelete}>
+    Delete ({selectedNotes.length}) Selected
+  </button>
+)}
+
                         <button className="btn btn-primary" onClick={() => { setEditNote(null); }} data-bs-toggle="modal" data-bs-target="#add-return-credit-note" >
                             <TbCirclePlus /> Add Credit Note
                         </button>
@@ -103,7 +142,8 @@ const DebitNote = () => {
                             <tr>
                                 <th className="no-sort">
                                     <div className="form-check form-check-md">
-                                        <input className="form-check-input" type="checkbox" id="select-all" />
+                                        <input className="form-check-input" type="checkbox" id="select-all"  checked={selectedNotes.length === debitNotes.length && debitNotes.length > 0}
+  onChange={handleSelectAll} />
                                     </div>
                                 </th>
                                 <th className="no-sort">ID</th>
@@ -122,7 +162,8 @@ const DebitNote = () => {
                                     <tr key={note._id || idx}>
                                         <td>
                                             <div className="form-check form-check-md">
-                                                <input className="form-check-input" type="checkbox" />
+                                                <input className="form-check-input" type="checkbox"  checked={selectedNotes.includes(note._id)}
+  onChange={() => handleCheckboxChange(note._id)} />
                                             </div>
                                         </td>
                                         <td>

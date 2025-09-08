@@ -17,6 +17,8 @@ const DebitNote = () => {
     const [search, setSearch] = React.useState('');
     const [startDate, setStartDate] = React.useState('');
     const [endDate, setEndDate] = React.useState('');
+    const [selectedNotes, setSelectedNotes] = React.useState([]);
+
 
     const fetchNotes = React.useCallback(() => {
         setLoading(true);
@@ -58,6 +60,36 @@ const DebitNote = () => {
             alert('Failed to delete');
         }
     };
+    // Toggle single checkbox
+const handleCheckboxChange = (id) => {
+  setSelectedNotes((prev) =>
+    prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id]
+  );
+};
+
+// Toggle "Select All"
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = debitNotes.map((note) => note._id);
+    setSelectedNotes(allIds);
+  } else {
+    setSelectedNotes([]);
+  }
+};
+
+const handleBulkDelete = async () => {
+  if (!window.confirm(`Delete ${selectedNotes.length} selected debit notes?`)) return;
+  try {
+    await Promise.all(
+      selectedNotes.map((id) => axios.delete(`${BASE_URL}/api/debit-notes/${id}`))
+    );
+    setDebitNotes((prev) => prev.filter((note) => !selectedNotes.includes(note._id)));
+    setSelectedNotes([]);
+  } catch (err) {
+    alert("Failed to delete selected debit notes");
+  }
+};
+
 
     return (
         <div className="page-wrapper">
@@ -91,8 +123,15 @@ const DebitNote = () => {
                             onChange={e => { setEndDate(e.target.value); setPage(1); }}
                             placeholder="End Date"
                         />
+                       
                     </div>
                     <div>
+                        {selectedNotes.length > 0 && (
+  <button className="btn btn-danger mb-1" onClick={handleBulkDelete}>
+    Delete ({selectedNotes.length}) Selected
+  </button>
+)}
+
                         <button className="btn btn-primary" onClick={() => { setEditNote(null); }} data-bs-toggle="modal" data-bs-target="#add-return-debit-note">
                             <TbCirclePlus /> Add Debit Note
                         </button>
@@ -104,7 +143,8 @@ const DebitNote = () => {
                             <tr>
                                 <th className="no-sort">
                                     <div className="form-check form-check-md">
-                                        <input className="form-check-input" type="checkbox" id="select-all" />
+                                        <input className="form-check-input"  type="checkbox" id="select-all"   onChange={handleSelectAll}
+  checked={debitNotes.length > 0 && debitNotes.every((n) => selectedNotes.includes(n._id))} />
                                     </div>
                                 </th>
                                 <th className="no-sort">ID</th>
@@ -123,7 +163,8 @@ const DebitNote = () => {
                                     <tr key={note._id || idx}>
                                         <td>
                                             <div className="form-check form-check-md">
-                                                <input className="form-check-input" type="checkbox" />
+                                                <input className="form-check-input" type="checkbox"  checked={selectedNotes.includes(note._id)}
+  onChange={() => handleCheckboxChange(note._id)} />
                                             </div>
                                         </td>
                                         <td>

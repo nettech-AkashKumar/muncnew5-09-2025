@@ -13,6 +13,9 @@ const LowStock = () => {
   const [loading, setLoading] = useState(true);
   const shownToastsRef = React.useRef(new Set());
   const [outOfStockProducts, setOutOfStockProducts] = useState([]);
+  const [selectedLowStock, setSelectedLowStock] = useState([]);
+const [selectedOutStock, setSelectedOutStock] = useState([]);
+
 
 
     useEffect(() => {
@@ -94,6 +97,62 @@ const LowStock = () => {
         fetchProducts();
     }, []);
 
+    // Toggle single product
+const handleCheckboxChange = (id, type) => {
+  if (type === "low") {
+    setSelectedLowStock((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+    );
+  } else {
+    setSelectedOutStock((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+    );
+  }
+};
+
+// Toggle "Select All"
+const handleSelectAll = (e, type) => {
+  if (type === "low") {
+    if (e.target.checked) {
+      setSelectedLowStock(products.map((p) => p._id));
+    } else {
+      setSelectedLowStock([]);
+    }
+  } else {
+    if (e.target.checked) {
+      setSelectedOutStock(outOfStockProducts.map((p) => p._id));
+    } else {
+      setSelectedOutStock([]);
+    }
+  }
+};
+  const handleBulkDelete = async (type) => {
+  const selectedIds = type === "low" ? selectedLowStock : selectedOutStock;
+  if (selectedIds.length === 0) return;
+  if (!window.confirm(`Delete ${selectedIds.length} product(s)?`)) return;
+
+  try {
+    await Promise.all(
+      selectedIds.map((id) =>
+        axios.delete(`${BASE_URL}/api/products/${id}`)
+      )
+    );
+
+    if (type === "low") {
+      setProducts((prev) => prev.filter((p) => !selectedIds.includes(p._id)));
+      setSelectedLowStock([]);
+    } else {
+      setOutOfStockProducts((prev) => prev.filter((p) => !selectedIds.includes(p._id)));
+      setSelectedOutStock([]);
+    }
+
+    toast.success("Selected products deleted");
+  } catch (err) {
+    toast.error("Failed to delete selected products");
+  }
+};
+
+
     return (
 <div className="page-wrapper">
   <div className="content">
@@ -103,6 +162,28 @@ const LowStock = () => {
         <h6>Manage your low stocks</h6>
       </div>
       <ul className="table-top-head low-stock-top-head">
+        <li>
+          {selectedLowStock.length > 0 && (
+  <button
+    className="btn btn-danger mb-2"
+    onClick={() => handleBulkDelete("low")}
+  >
+    Delete ({selectedLowStock.length}) Selected
+  </button>
+)}
+
+        </li>
+        <li>
+          {selectedOutStock.length > 0 && (
+  <button
+    className="btn btn-danger mb-2"
+    onClick={() => handleBulkDelete("out")}
+  >
+    Delete ({selectedOutStock.length}) Selected
+  </button>
+)}
+
+        </li>
         <li>
           <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf" ><img src={PDF} alt="pdf" /></a>
         </li>
@@ -233,7 +314,13 @@ const LowStock = () => {
                     <tr>
                       <th className="no-sort">
                         <label className="checkboxs">
-                          <input type="checkbox" id="select-all" />
+                          <input
+  type="checkbox"
+  id="select-all"
+  checked={selectedLowStock.length === products.length && products.length > 0} // ✅ auto-check
+  onChange={(e) => handleSelectAll(e, "low")} // ✅ wire select all
+/>
+
                           <span className="checkmarks" />
                         </label>
                       </th>
@@ -253,7 +340,13 @@ const LowStock = () => {
                         <tr key={product._id}>
                             <td>
                                 <label className="checkboxs">
-                                    <input type="checkbox" />
+                                   <input
+  type="checkbox"
+  checked={selectedLowStock.includes(product._id)} // ✅ correct state
+  onChange={() => handleCheckboxChange(product._id, "low")} // ✅ correct type
+/>
+
+
                                     <span className="checkmarks" />
                                 </label>
                             </td>
@@ -400,7 +493,11 @@ const LowStock = () => {
                     <tr>
                       <th className="no-sort">
                         <label className="checkboxs">
-                          <input type="checkbox" id="select-all-2" />
+                          <input type="checkbox" id="select-all-2"    checked={
+          selectedOutStock.length === outOfStockProducts.length && // ✅ auto-check when all are selected
+          outOfStockProducts.length > 0
+        }
+        onChange={(e) => handleSelectAll(e, 'out')}/>
                           <span className="checkmarks" />
                         </label>
                       </th>
@@ -420,7 +517,12 @@ const LowStock = () => {
                         <tr key={product._id}>
                             <td>
                                 <label className="checkboxs">
-                                    <input type="checkbox" />
+                                   <input
+  type="checkbox"
+  checked={selectedOutStock.includes(product._id)} // ✅ correct state
+  onChange={() => handleCheckboxChange(product._id, "out")} // ✅ correct type
+/>
+
                                     <span className="checkmarks" />
                                 </label>
                             </td>
