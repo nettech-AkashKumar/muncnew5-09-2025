@@ -152,11 +152,7 @@
 //   setSelectedImages([]); // Reset selected files
 // };
 
-
-
-// ///================================================================================== 
-
-
+// ///==================================================================================
 
 // const handleDeleteBrand = async (brandId, brandName) => {
 //   const confirmed = await DeleteAlert({});
@@ -183,7 +179,6 @@
 //   }
 // };
 
-
 //   const filteredBrands = brands
 //     .filter((brand) => {
 //       if (statusFilter === "All") return true;
@@ -203,21 +198,12 @@
 //       return 0;
 //     });
 
-
-
 //   const paginatedBrands = filteredBrands.slice(
 //     (currentPage - 1) * itemsPerPage,
 //     currentPage * itemsPerPage
 //   );
 
-
-
 //   const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
-
-
-
-
-
 
 //   return (
 //     <div className="page-wrapper">
@@ -423,12 +409,12 @@
 //                     </tr>
 //                   ))}
 //                 </tbody>
-               
+
 //               </table>
 //             </div>
 //             {/* pagination */}
 //             <div className="d-flex justify-content-between align-items-center p-3">
-             
+
 //               <div className="d-flex justify-content-end align-items-center">
 //                 <label className="me-2">Items per page:</label>
 //                 <select
@@ -611,7 +597,7 @@
 //                       </a>
 //                     </div>
 //                     <div>
-                      
+
 //                       <div className="image-upload mb-0">
 //                         <input
 //                           type="file"
@@ -684,8 +670,6 @@
 
 // export default Brand;
 
-
-
 import React, { useEffect, useState } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
@@ -710,8 +694,10 @@ const Brand = () => {
   const [editImagePreview, setEditImagePreview] = useState("");
   const [brands, setBrands] = useState([]);
   const [errors, setErrors] = useState({});
-  const brandNameRegex = /^[A-Za-z0-9\s]{2,50}$/;
 
+  const [selectedBrands, setSelectedBrands] = useState([]);
+
+  const brandNameRegex = /^[A-Za-z0-9\s]{2,50}$/;
 
   console.log(brands);
 
@@ -720,7 +706,6 @@ const Brand = () => {
   const [sortOrder, setSortOrder] = useState("Latest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
 
   useEffect(() => {
     fetchBrands();
@@ -746,7 +731,6 @@ const Brand = () => {
 
       setBrands(res.data.brands);
       console.log("Brnad :", res.data.brands);
-
     } catch (error) {
       console.error(
         "Fetch Brands Error:",
@@ -762,7 +746,8 @@ const Brand = () => {
     let newErrors = {};
     // validation
     if (!brandNameRegex.test(brandName)) {
-      newErrors.brandName = "Brand name must be 2–50 characters (letters, numbers, spaces only).";
+      newErrors.brandName =
+        "Brand name must be 2–50 characters (letters, numbers, spaces only).";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -810,7 +795,8 @@ const Brand = () => {
       console.error("Add Brand Error:", error.response?.data || error.message);
 
       toast.error(
-        error.response?.data?.message || "Failed to add brand. Please try again."
+        error.response?.data?.message ||
+          "Failed to add brand. Please try again."
       );
     }
   };
@@ -855,7 +841,10 @@ const Brand = () => {
       window.$(`#edit-brand`).modal("hide");
       toast.success("Brand updated successfully!");
     } catch (error) {
-      console.error("Update brand failed:", error.response?.data || error.message);
+      console.error(
+        "Update brand failed:",
+        error.response?.data || error.message
+      );
       toast.error("Failed to update brand");
     }
   };
@@ -869,11 +858,7 @@ const Brand = () => {
     setSelectedImages([]); // Reset selected files
   };
 
-
-
-  ///================================================================================== 
-
-
+  ///==================================================================================
 
   const handleDeleteBrand = async (brandId, brandName) => {
     const confirmed = await DeleteAlert({});
@@ -895,11 +880,13 @@ const Brand = () => {
         "success"
       );
     } catch (error) {
-      console.error("Delete brand failed:", error.response?.data || error.message);
+      console.error(
+        "Delete brand failed:",
+        error.response?.data || error.message
+      );
       toast.error("Failed to delete brand");
     }
   };
-
 
   const filteredBrands = brands
     .filter((brand) => {
@@ -920,28 +907,74 @@ const Brand = () => {
       return 0;
     });
 
-
-
   const paginatedBrands = filteredBrands.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-
-
   const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
-
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = files.filter((file) => ["image/jpeg", "image/png"].includes(file.type) && file.size <= 2 * 1024 * 1024);
+    const validFiles = files.filter(
+      (file) =>
+        ["image/jpeg", "image/png"].includes(file.type) &&
+        file.size <= 2 * 1024 * 1024
+    );
     if (validFiles.length !== files.length) {
-      toast.error("Only JPG/PNG up to 2MB allowed")
+      toast.error("Only JPG/PNG up to 2MB allowed");
     }
     setSelectedImages(validFiles);
-  }
+  };
 
+  /// bulk delete concept start from here
 
+  const handleCheckboxChange = (id) => {
+    setSelectedBrands((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // select/unselect all on current page
+  const handleSelectAll = (pageIds, allSelectedOnPage) => {
+    if (allSelectedOnPage) {
+      setSelectedBrands((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedBrands((prev) => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  // bulk delete selected brands
+  const handleBulkDelete = async () => {
+    if (selectedBrands.length === 0) return;
+
+    const confirmed = await DeleteAlert({});
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await Promise.all(
+        selectedBrands.map((id) =>
+          axios.delete(`${BASE_URL}/api/brands/deleteBrand/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        )
+      );
+
+      toast.success("Selected brands deleted");
+      setSelectedBrands([]);
+      fetchBrands();
+    } catch (err) {
+      console.error("Bulk delete failed:", err.response?.data || err.message);
+      toast.error("Failed to delete selected brands");
+    }
+  };
+
+  // derive page IDs + select-all status
+  const pageIds = paginatedBrands.map((b) => b._id);
+  const allSelectedOnPage =
+    pageIds.length > 0 && pageIds.every((id) => selectedBrands.includes(id));
 
   return (
     <div className="page-wrapper">
@@ -954,6 +987,16 @@ const Brand = () => {
             </div>
           </div>
           <div className="table-top-head me-2">
+            <li>
+              {selectedBrands.length > 0 && (
+                <button
+                  className="btn btn-danger ms-2"
+                  onClick={handleBulkDelete}
+                >
+                  Delete ({selectedBrands.length}) Selected
+                </button>
+              )}
+            </li>
             <li>
               <button type="button" className="icon-btn" title="Pdf">
                 <FaFilePdf />
@@ -1076,7 +1119,14 @@ const Brand = () => {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input
+                          type="checkbox"
+                          id="select-all"
+                          checked={allSelectedOnPage}
+                          onChange={() =>
+                            handleSelectAll(pageIds, allSelectedOnPage)
+                          }
+                        />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -1091,7 +1141,11 @@ const Brand = () => {
                     <tr key={brand._id}>
                       <td>
                         <label className="checkboxs">
-                          <input type="checkbox" />
+                          <input
+                            type="checkbox"
+                            checked={selectedBrands.includes(brand._id)}
+                            onChange={() => handleCheckboxChange(brand._id)}
+                          />
                           <span className="checkmarks" />
                         </label>
                       </td>
@@ -1114,10 +1168,11 @@ const Brand = () => {
                       <td>{new Date(brand.createdAt).toLocaleDateString()}</td>
                       <td>
                         <span
-                          className={`badge table-badge fw-medium fs-10 ${brand.status === "Active"
-                            ? "bg-success"
-                            : "bg-danger"
-                            }`}
+                          className={`badge table-badge fw-medium fs-10 ${
+                            brand.status === "Active"
+                              ? "bg-success"
+                              : "bg-danger"
+                          }`}
                         >
                           {brand.status}
                         </span>
@@ -1146,12 +1201,10 @@ const Brand = () => {
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
             {/* pagination */}
             <div className="d-flex justify-content-between align-items-center p-3">
-
               <div className="d-flex justify-content-end align-items-center">
                 <label className="me-2">Items per page:</label>
                 <select
@@ -1178,10 +1231,11 @@ const Brand = () => {
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button
                     key={i}
-                    className={`btn btn-sm me-1 ${currentPage === i + 1
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                      }`}
+                    className={`btn btn-sm me-1 ${
+                      currentPage === i + 1
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
                     onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
@@ -1206,7 +1260,14 @@ const Brand = () => {
           <div className="modal" id="add-brand">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
-                <div className="modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div
+                  className="modal-header"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <div className="page-title">
                     <h4>Add Brand</h4>
                   </div>
@@ -1244,9 +1305,14 @@ const Brand = () => {
                           id="brandImageInput"
                           accept="image/png, image/jpeg"
                           onChange={handleFileChange}
-                          style={{ display: 'none' }}
+                          style={{ display: "none" }}
                         />
-                        <button style={{}} type="button" onClick={() => document.getElementById("brandImageInput").click()}
+                        <button
+                          style={{}}
+                          type="button"
+                          onClick={() =>
+                            document.getElementById("brandImageInput").click()
+                          }
                           className="btn btn-outline-primary"
                         >
                           Upload Image
@@ -1264,7 +1330,9 @@ const Brand = () => {
                         value={brandName}
                         onChange={(e) => setBrandName(e.target.value)}
                       />
-                      {errors.brandName && <p className="text-danger">{errors.brandName}</p>}
+                      {errors.brandName && (
+                        <p className="text-danger">{errors.brandName}</p>
+                      )}
                     </div>
                     <div className="mb-0">
                       <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
@@ -1276,7 +1344,9 @@ const Brand = () => {
                           checked={status}
                           onChange={(e) => setStatus(e.target.checked)}
                         />
-                        {errors.editBrandName && <p className="text-danger">{errors.editBrandName}</p>}
+                        {errors.editBrandName && (
+                          <p className="text-danger">{errors.editBrandName}</p>
+                        )}
                         <label htmlFor="user2" className="checktoggle" />
                       </div>
                     </div>
@@ -1334,7 +1404,6 @@ const Brand = () => {
                       </a>
                     </div>
                     <div>
-
                       <div className="mb-0">
                         <input
                           type="file"
@@ -1350,7 +1419,13 @@ const Brand = () => {
                             }
                           }}
                         />
-                        <button type="button" onClick={() => document.getElementById("brandImageInput").click()} className="btn btn-outline-primary">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document.getElementById("brandImageInput").click()
+                          }
+                          className="btn btn-outline-primary"
+                        >
                           Change Image
                         </button>
                         <p className="mt-2">JPEG, PNG up to 2 MB</p>
@@ -1366,9 +1441,10 @@ const Brand = () => {
                       className="form-control"
                       value={editBrandName}
                       onChange={(e) => setEditBrandName(e.target.value)}
-                      
                     />
-                    {errors.editBrandName && <p className="text-danger">{errors.editBrandName}</p>}
+                    {errors.editBrandName && (
+                      <p className="text-danger">{errors.editBrandName}</p>
+                    )}
                   </div>
                   <div className="mb-0">
                     <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
@@ -1406,4 +1482,3 @@ const Brand = () => {
 };
 
 export default Brand;
-

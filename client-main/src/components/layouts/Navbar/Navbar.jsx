@@ -435,7 +435,7 @@ function Navbar() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
-                  border: '2px solid white',
+                  border: '1px solid white',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}>
                   {notificationCount > 99 ? '99+' : notificationCount}

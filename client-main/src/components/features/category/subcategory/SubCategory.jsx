@@ -29,6 +29,10 @@ const SubCategory = () => {
   const [errors, setErrors] = useState({});
   const nameRegex = /^[A-Za-z]{2,}$/;
 
+  // NEW STATE: track selected subcategories for bulk delete
+  const [selectedSubCategories, setSelectedSubCategories] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+
   const fetchCategories = async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/category/categories`);
@@ -63,6 +67,52 @@ const SubCategory = () => {
 
     const previews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews(previews);
+  };
+
+  
+  // 👉 Handle single checkbox toggle
+  const handleCheckboxChange = (id) => {
+    setSelectedSubCategories((prev) =>
+      prev.includes(id)
+        ? prev.filter((subId) => subId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // 👉 Handle select all toggle
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedSubCategories([]);
+    } else {
+      setSelectedSubCategories(paginatedSubCategories.map((s) => s._id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  // 👉 Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedSubCategories.length === 0) {
+      toast.warn("No subcategories selected!");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete selected subcategories?")) {
+      return;
+    }
+
+    try {
+      await Promise.all(
+        selectedSubCategories.map((id) =>
+          axios.delete(`${BASE_URL}/api/subcategory/subcategories/${id}`)
+        )
+      );
+      toast.success("Selected subcategories deleted successfully");
+      fetchSubcategories();
+      setSelectedSubCategories([]);
+      setSelectAll(false);
+    } catch (error) {
+      toast.error("Failed to delete selected subcategories");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -222,6 +272,17 @@ const SubCategory = () => {
           </div>
           <div className="table-top-head me-2">
             <li>
+             {/*  Bulk Delete Button */}
+            {selectedSubCategories.length > 0 && (
+            <button
+              className="btn btn-danger"
+              onClick={handleBulkDelete}
+              disabled={selectedSubCategories.length === 0}
+            >
+              Delete ({selectedSubCategories.length}) Selected
+            </button>
+            )}</li>
+            <li>
               <button type="button" className="icon-btn" title="Pdf">
                 <FaFilePdf />
               </button>
@@ -238,7 +299,8 @@ const SubCategory = () => {
               </button>
             </li>
           </div>
-          <div className="page-btn">
+          <div className="page-btn d-flex gap-2">
+           
             <a
               href="#"
               className="btn btn-primary"
@@ -347,7 +409,7 @@ const SubCategory = () => {
                   <tr style={{ textAlign: "center" }}>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input type="checkbox" id="select-all" checked={selectAll} onChange={handleSelectAll} />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -363,10 +425,11 @@ const SubCategory = () => {
                 <tbody>
                   {paginatedSubCategories.length > 0 ? (
                     paginatedSubCategories.map((subcat) => (
-                      <tr style={{ textAlign: "center" }}>
+                      <tr  key={subcat._id} style={{ textAlign: "center" }}>
                         <td>
                           <label className="checkboxs">
-                            <input type="checkbox" />
+                            <input type="checkbox"   checked={selectedSubCategories.includes(subcat._id)}
+                              onChange={() => handleCheckboxChange(subcat._id)} />
                             <span className="checkmarks" />
                           </label>
                         </td>
