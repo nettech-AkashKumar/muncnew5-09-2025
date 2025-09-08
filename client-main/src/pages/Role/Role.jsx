@@ -717,8 +717,9 @@ const Role = () => {
                       required
                     />
                   </div>
-                  <div className="mb-0">
-                    <div className="status-toggle modal-status d-flex flex-column" style={{ gap: '4px' }}>
+                  <div className="mb-0"> 
+                    {/* i remove this from below div status-toggle modal-status */}
+                    <div className=" d-flex flex-column" style={{ gap: '4px' }}>   
                       <span>
                       <label
                         className="ffrrstname"
@@ -726,7 +727,6 @@ const Role = () => {
                           fontWeight: "400",
                           fontSize: "14px",
                           lineHeight: "14px",
-                          marginRight:'10px'
                         }}
                       >
                         Status
@@ -883,7 +883,8 @@ const Role = () => {
                     />
                   </div>
                   <div className="mb-3">
-                    <div className="status-toggle modal-status d-flex flex-column" style={{ gap: '4px' }}>
+                    {/* i remove from status-toggle modal-status */}
+                    <div className=" d-flex flex-column" style={{ gap: '4px' }}>
                       <span>
                       <label
                         className="ffrrstname"
@@ -891,7 +892,6 @@ const Role = () => {
                           fontWeight: "400",
                           fontSize: "14px",
                           lineHeight: "14px",
-                          marginRight:'10px'
                         }}
                       >
                         Status
