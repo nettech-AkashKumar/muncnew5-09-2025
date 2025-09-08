@@ -43,6 +43,8 @@ const ExpriedProduct = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [warned, setWarned] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -80,6 +82,49 @@ const ExpriedProduct = () => {
       }
     }
   }, [loading, products, warned]);
+  const handleCheckboxChange = (id) => {
+  setSelectedProducts(prev =>
+    prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+  );
+};
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = products
+      .filter(product => {
+        const expiryArr = product.variants?.get?.('Expiry') || product.variants?.['Expiry'];
+        if (!expiryArr || expiryArr.length === 0) return false;
+        return expiryArr.some(dateStr => {
+          const [day, month, year] = dateStr.split('-').map(Number);
+          if (!day || !month || !year) return false;
+          const expDate = new Date(year, month - 1, day);
+          const today = new Date();
+          const tenDaysLater = new Date();
+          tenDaysLater.setDate(today.getDate() + 10);
+          return expDate >= today && expDate <= tenDaysLater;
+        });
+      })
+      .map(p => p._id);
+    setSelectedProducts(allIds);
+  } else {
+    setSelectedProducts([]);
+  }
+};
+const handleBulkDelete = async () => {
+  try {
+    await Promise.all(
+      selectedProducts.map(id => axios.delete(`/api/products/${id}`))
+    );
+    setSelectedProducts([]);
+    setProducts(prev => prev.filter(p => !selectedProducts.includes(p._id)));
+    window.toast && window.toast.success("Selected products deleted successfully!");
+  } catch (err) {
+    console.error(err);
+    window.toast && window.toast.error("Failed to delete selected products");
+  }
+};
+
+
+
 
   return (
    <div className="page-wrapper">
@@ -92,6 +137,17 @@ const ExpriedProduct = () => {
         </div>						
       </div>
       <ul className="table-top-head">
+        <li>
+          {selectedProducts.length > 0 && (
+  <button
+    className="btn btn-danger ms-3"
+    onClick={handleBulkDelete}
+  >
+    Delete ({selectedProducts.length}) Selected
+  </button>
+)}
+
+        </li>
         <li>
           <a onClick={handlePDFExport} title="Download PDF" ><FaFilePdf className="fs-20" style={{color:"red"}} /></a>
         </li>
@@ -120,6 +176,7 @@ const ExpriedProduct = () => {
               Product
             </a>
             <ul className="dropdown-menu  dropdown-menu-end p-3">
+
               <li>
                 <a className="dropdown-item rounded-1">Lenovo IdeaPad 3</a>
               </li>
@@ -165,7 +222,23 @@ const ExpriedProduct = () => {
               <tr>
                 <th className="no-sort">
                   <label className="checkboxs">
-                    <input type="checkbox" id="select-all" />
+                    <input type="checkbox" id="select-all"  checked={
+    selectedProducts.length > 0 &&
+    selectedProducts.length === products.filter(product => {
+      const expiryArr = product.variants?.get?.('Expiry') || product.variants?.['Expiry'];
+      if (!expiryArr || expiryArr.length === 0) return false;
+      return expiryArr.some(dateStr => {
+        const [day, month, year] = dateStr.split('-').map(Number);
+        if (!day || !month || !year) return false;
+        const expDate = new Date(year, month - 1, day);
+        const today = new Date();
+        const tenDaysLater = new Date();
+        tenDaysLater.setDate(today.getDate() + 10);
+        return expDate >= today && expDate <= tenDaysLater;
+      });
+    }).length
+  }
+  onChange={handleSelectAll} />
                     <span className="checkmarks" />
                   </label>
                 </th>
@@ -197,7 +270,8 @@ const ExpriedProduct = () => {
                 <tr key={product._id}>
                   <td>
                     <label className="checkboxs">
-                      <input type="checkbox" />
+                      <input type="checkbox"   checked={selectedProducts.includes(product._id)}
+  onChange={() => handleCheckboxChange(product._id)}/>
                       <span className="checkmarks" />
                     </label>
                   </td>

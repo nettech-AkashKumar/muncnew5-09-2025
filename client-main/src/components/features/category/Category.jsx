@@ -539,6 +539,10 @@ import DeleteAlert from "../../../utils/sweetAlert/DeleteAlert";
 import Swal from "sweetalert2";
 import { sanitizeInput } from "../../../utils/sanitize"
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import Papa from 'papaparse';
+
 const Category = () => {
   const [categories, setCategories] = useState([]);
   const [categoryName, setCategoryName] = useState("");
@@ -656,7 +660,7 @@ const Category = () => {
           categorySlug: cleanSlug,
         }
       );
-      console.log("Editing Countries ID:", editingCategories?._id);
+      // console.log("Editing Countries ID:", editingCategories?._id);
 
       toast.success("State updated");
       setEditMode(false);
@@ -709,9 +713,116 @@ const Category = () => {
     }
   };
 
+  //csv upload--------------------------------------------------------------------------------------------------------------------------------------------------
+
+  const handleCSV = () => {
+  const tableHeader = [
+    "Category Code",
+    "Category",
+    "Category slug",
+    "Created On",
+  ];
+  const csvRows = [
+    tableHeader.join(","),
+    ...categories.map((e) => [
+    e.categoryCode,
+    e.categoryName,
+    e.categorySlug,
+    e.createdAt,
+    ].join(",")),
+  ];
+  const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "category.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+
+//excell file upload--------------------------------------------------------------------------------------------------------------------------------------------------
+
+  const fileInputRef = React.useRef();
+
+  const handleImportClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.xlsx')) {
+      alert('Please select a valid file');
+      return;
+    }
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const requiredFields = [
+          'Category Code', 'Category', 'Category slug', 'Created On'
+        ];
+        const valid = results.data.every(row => requiredFields.every(f => f in row && row[f] !== ''));
+        if (!valid) {
+          alert('structure does not match the required schema.');
+          return;
+        }
+        // Optionally: convert types (grandTotal, orderTax, orderDiscount, shipping to Number, date to Date)
+        
+        // Send to backend
+        try {
+          await axios.post(`${BASE_URL}/api/category/categories`, payload);
+          toast.success("Imported successfully!");
+          
+        } catch (err) {
+          alert('Error while Import');
+        }
+      }
+    });
+  };
+
+  //pdf download----------------------------------------------------------------------------------------------------------------------------------------
+  
+const handlePdf = () => {
+  const doc = new jsPDF();
+  doc.text("Category",14,15);
+  const tableColumns = [
+    "Category Code",
+    "Category",
+    "Category slug",
+    "Created On",
+  ];
+
+  const tableRows = categories.map((e) =>[
+    e.categoryCode,
+    e.categoryName,
+    e.categorySlug,
+    e.createdAt,
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumns],
+    body: tableRows,
+    startY: 20,
+    styles:{
+      fontSize: 8,
+    },
+    headStyles: {
+      fillColor: [155, 155, 155],
+        textColor: "white",
+    },
+    theme:"striped",
+  });
+
+  doc.save("categories.pdf");
+}
+
   return (
     <div className="page-wrapper">
-      <div className="content">
+      <div className="content" style={{marginTop:'50px'}}>
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
@@ -735,18 +846,18 @@ const Category = () => {
       </ul> */}
           <div className="table-top-head me-2">
             <li>
-              <button type="button" className="icon-btn" title="Pdf">
+              <button type="button" className="icon-btn" title="Pdf" onClick={handlePdf}>
                 <FaFilePdf />
               </button>
             </li>
             <li>
               <label className="icon-btn m-0" title="Import Excel">
-                <input type="file" accept=".xlsx, .xls" hidden />
-                <FaFileExcel style={{ color: "green" }} />
+                <button type="button" onClick={handleImportClick} style={{backgroundColor:'white', display:'flex', alignItems:'center', border:'none'}}><FaFileExcel style={{color:'green'}} /></button>
+                <input type="file" accept=".xlsx, .xls" ref={fileInputRef} style={{display:'none'}} onChange={handleFileChange} />
               </label>
             </li>
             <li>
-              <button type="button" className="icon-btn" title="Export Excel">
+              <button type="button" className="icon-btn" title="Export Excel" onClick={handleCSV}>
                 <FaFileExcel />
               </button>
             </li>

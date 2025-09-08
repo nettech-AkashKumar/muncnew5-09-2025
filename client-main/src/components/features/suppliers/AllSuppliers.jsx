@@ -42,6 +42,9 @@ function AllSuppliers() {
   const [loading, setLoading] = useState(false);
   const [editSupplier, setEditSupplier] = useState(null);
 
+const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+
+
   useEffect(() => {
     fetchSuppliers();
   }, []);
@@ -82,6 +85,43 @@ function AllSuppliers() {
   // const [showViewModal, setShowViewModal] = useState(false);
   const [viewSupplierId, setViewSupplierId] = useState(null);
 
+  // NEW: Handle single checkbox
+const handleCheckboxChange = (id) => {
+  setSelectedSuppliers((prev) =>
+    prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+  );
+};
+
+// NEW: Handle select all
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = paginatedData.map((s) => s._id);
+    setSelectedSuppliers(allIds);
+  } else {
+    setSelectedSuppliers([]);
+  }
+};
+
+// NEW: Bulk delete
+const handleBulkDelete = async () => {
+  if (selectedSuppliers.length === 0) return;
+  if (!window.confirm(`Delete ${selectedSuppliers.length} suppliers?`)) return;
+
+  try {
+    await Promise.all(
+      selectedSuppliers.map((id) =>
+        fetch(`${BASE_URL}/api/suppliers/${id}`, { method: "DELETE" })
+      )
+    );
+    setSelectedSuppliers([]); // clear after delete
+    fetchSuppliers(); // refresh list
+  } catch (err) {
+    alert("Failed to delete selected suppliers.");
+  }
+};
+
+
+
   return (
 
     <div className="page-wrapper">
@@ -94,6 +134,15 @@ function AllSuppliers() {
             </div>
           </div>
           <ul className="table-top-head">
+            <li>
+              {/* NEW: Bulk delete button */}
+{selectedSuppliers.length > 0 && (
+  <button className="btn btn-danger ms-2" onClick={handleBulkDelete}>
+    Delete ({selectedSuppliers.length}) Selected
+  </button>
+)}
+
+            </li>
             <li className="me-2">
               <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf"><img src="assets/img/icons/pdf.svg" alt="img" /></a>
             </li>
@@ -109,7 +158,7 @@ function AllSuppliers() {
           </ul>
           <div className="page-btn">
             <button onClick={() => { setShowAddModal(true); }} className="add-btn">
-              <TbCirclePlus />Add Supplier
+              <TbCirclePlus />Add Supplier 
             </button>
           </div>
         </div>
@@ -143,7 +192,11 @@ function AllSuppliers() {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input type="checkbox" id="select-all" checked={
+    selectedSuppliers.length > 0 &&
+    selectedSuppliers.length === paginatedData.length
+  }
+  onChange={handleSelectAll} />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -161,7 +214,8 @@ function AllSuppliers() {
                     <tr key={supplier._id}>
                       <td>
                         <label className="checkboxs">
-                          <input type="checkbox" />
+                          <input type="checkbox"   checked={selectedSuppliers.includes(supplier._id)}
+  onChange={() => handleCheckboxChange(supplier._id)} />
                           <span className="checkmarks" />
                         </label>
                       </td>

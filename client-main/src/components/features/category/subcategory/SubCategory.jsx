@@ -10,6 +10,9 @@ import { toast } from "react-toastify";
 import { sanitizeInput } from "../../../../utils/sanitize";
 import axios from "axios";
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import Papa from 'papaparse';
 
 const SubCategory = () => {
   const [categories, setCategories] = useState([]);
@@ -260,6 +263,73 @@ const SubCategory = () => {
     }
   };
 
+  //pdf download------------------------------------------------------------------------------------------------------------------------------------------
+  
+  const handlePdf = () => {
+    const doc = new jsPDF();
+    doc.text("Sub Category",14,15);
+    const tableColumns = [
+      "Category Code",
+      "Category",
+      "Sub Category",
+      "Description",
+    ];
+  
+    const tableRows = subcategories.map((e) =>[
+      e.category?.categoryCode,
+      e.category?.categoryName,
+      e.subCategoryName,
+      e.description,
+    ]);
+  
+    autoTable(doc, {
+      head: [tableColumns],
+      body: tableRows,
+      startY: 20,
+      styles:{
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [155, 155, 155],
+          textColor: "white",
+      },
+      theme:"striped",
+    });
+  
+    doc.save("sub-categories.pdf");
+  }
+
+  
+  //csv upload--------------------------------------------------------------------------------------------------------------------------------------------------
+
+  const handleCSV = () => {
+  const tableHeader = [
+    "Category Code",
+    "Category",
+    "Sub Category",
+    "Description",
+  ];
+  const csvRows = [
+    tableHeader.join(","),
+    ...subcategories.map((e) => [
+    e.category?.categoryCode,
+    e.category?.categoryName,
+    e.subCategoryName,
+    e.description,
+    ].join(",")),
+  ];
+  const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "sub-category.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+
   return (
     <div className="page-wrapper" style={{marginTop:'60px'}}>
       <div className="content">
@@ -283,7 +353,7 @@ const SubCategory = () => {
             </button>
             )}</li>
             <li>
-              <button type="button" className="icon-btn" title="Pdf">
+              <button type="button" className="icon-btn" title="Pdf" onClick={handlePdf}>
                 <FaFilePdf />
               </button>
             </li>
@@ -294,7 +364,7 @@ const SubCategory = () => {
               </label>
             </li>
             <li>
-              <button type="button" className="icon-btn" title="Export Excel">
+              <button type="button" className="icon-btn" title="Export Excel" onClick={handleCSV}>
                 <FaFileExcel />
               </button>
             </li>
