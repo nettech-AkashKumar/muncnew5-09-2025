@@ -272,6 +272,17 @@ const SubCategory = () => {
           </div>
           <div className="table-top-head me-2">
             <li>
+             {/*  Bulk Delete Button */}
+            {selectedSubCategories.length > 0 && (
+            <button
+              className="btn btn-danger"
+              onClick={handleBulkDelete}
+              disabled={selectedSubCategories.length === 0}
+            >
+              Delete ({selectedSubCategories.length}) Selected
+            </button>
+            )}</li>
+            <li>
               <button type="button" className="icon-btn" title="Pdf">
                 <FaFilePdf />
               </button>
@@ -289,14 +300,7 @@ const SubCategory = () => {
             </li>
           </div>
           <div className="page-btn d-flex gap-2">
-            {/* 👉 Bulk Delete Button */}
-            <button
-              className="btn btn-danger"
-              onClick={handleBulkDelete}
-              disabled={selectedSubCategories.length === 0}
-            >
-              Delete ({selectedSubCategories.length}) Selected
-            </button>
+           
             <a
               href="#"
               className="btn btn-primary"
