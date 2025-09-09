@@ -1,19 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Bar } from 'react-chartjs-2';
-import { Line } from 'react-chartjs-2';
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import { Bar } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
+import {
+  Chart,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 import BASE_URL from "../../../../pages/config/config";
 import axios from "axios"; // Make sure axios is imported
 import { toast } from "react-toastify";
 import { TbEdit, TbTrash } from "react-icons/tb";
 
-
 const ManageStock = () => {
-  const [chartType, setChartType] = useState('bar');
+  const [chartType, setChartType] = useState("bar");
   const [showPurchase, setShowPurchase] = useState(true);
   const [showReturn, setShowReturn] = useState(true);
-    const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [selectedLogs, setSelectedLogs] = useState([]);
 
   console.log(logs);
 
@@ -31,7 +38,14 @@ const ManageStock = () => {
   });
 
   // Calculate total quantity, total price, and total return quantity for all stock history (not just current page)
-  const [allTotals, setAllTotals] = useState({ totalQuantity: 0, totalPrice: 0, totalReturnQty: 0, totalReturnAmount: 0, availableQty: 0, availablePrice: 0 });
+  const [allTotals, setAllTotals] = useState({
+    totalQuantity: 0,
+    totalPrice: 0,
+    totalReturnQty: 0,
+    totalReturnAmount: 0,
+    availableQty: 0,
+    availablePrice: 0,
+  });
 
   useEffect(() => {
     fetchStockHistory();
@@ -50,10 +64,10 @@ const ManageStock = () => {
         let totalReturnQty = 0;
         let totalReturnPrice = 0;
         let totalReturnAmount = 0;
-        allLogs.forEach(log => {
+        allLogs.forEach((log) => {
           const qty = Number(log.quantityChanged) || 0;
           const price = Number(log.priceChanged) || 0;
-          if (log.type && log.type.toLowerCase() === 'return') {
+          if (log.type && log.type.toLowerCase() === "return") {
             totalReturnQty -= qty;
             totalReturnPrice += price;
             totalReturnAmount += price * qty;
@@ -65,9 +79,23 @@ const ManageStock = () => {
         // Available = total - return
         const availableQty = totalQuantity - totalReturnQty;
         const availablePrice = totalPrice - totalReturnPrice;
-        setAllTotals({ totalQuantity, totalPrice, totalReturnQty, totalReturnAmount, availableQty, availablePrice });
+        setAllTotals({
+          totalQuantity,
+          totalPrice,
+          totalReturnQty,
+          totalReturnAmount,
+          availableQty,
+          availablePrice,
+        });
       } catch (err) {
-        setAllTotals({ totalQuantity: 0, totalPrice: 0, totalReturnQty: 0, totalReturnAmount: 0, availableQty: 0, availablePrice: 0 });
+        setAllTotals({
+          totalQuantity: 0,
+          totalPrice: 0,
+          totalReturnQty: 0,
+          totalReturnAmount: 0,
+          availableQty: 0,
+          availablePrice: 0,
+        });
       }
     };
     fetchAllTotals();
@@ -97,7 +125,6 @@ const ManageStock = () => {
     setFilters({ ...filters, page });
   };
 
-
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this log?")) return;
 
@@ -112,32 +139,38 @@ const ManageStock = () => {
   };
 
   // Calculate total quantity and total price
-  const totalQuantity = logs.reduce((sum, log) => sum + (Number(log.quantityChanged) || 0), 0);
-  const totalPrice = logs.reduce((sum, log) => sum + (Number(log.priceChanged) || 0), 0);
+  const totalQuantity = logs.reduce(
+    (sum, log) => sum + (Number(log.quantityChanged) || 0),
+    0
+  );
+  const totalPrice = logs.reduce(
+    (sum, log) => sum + (Number(log.priceChanged) || 0),
+    0
+  );
 
   // Chart data logic
   const chartLabels = [];
   const chartValues = [];
   const chartColors = [];
   if (showPurchase) {
-    chartLabels.push('Purchase');
+    chartLabels.push("Purchase");
     chartValues.push(allTotals.totalQuantity);
-    chartColors.push('#007AFF');
+    chartColors.push("#007AFF");
   }
   if (showReturn) {
-    chartLabels.push('Return');
+    chartLabels.push("Return");
     chartValues.push(Math.abs(allTotals.totalReturnQty));
-    chartColors.push('#FF6384');
+    chartColors.push("#FF6384");
   }
   const chartData = {
     labels: chartLabels,
     datasets: [
       {
-        label: 'Quantity',
+        label: "Quantity",
         data: chartValues,
         backgroundColor: chartColors,
         borderColor: chartColors,
-        fill: chartType === 'line' ? false : true,
+        fill: chartType === "line" ? false : true,
       },
     ],
   };
@@ -148,44 +181,93 @@ const ManageStock = () => {
       tooltip: { enabled: true },
     },
     scales: {
-      x: { title: { display: true, text: 'Type' } },
-      y: { title: { display: true, text: 'Quantity' }, beginAtZero: true },
+      x: { title: { display: true, text: "Type" } },
+      y: { title: { display: true, text: "Quantity" }, beginAtZero: true },
     },
+  };
+
+  const handleSelectLog = (id) => {
+    setSelectedLogs((prev) =>
+      prev.includes(id) ? prev.filter((lid) => lid !== id) : [...prev, id]
+    );
+  };
+  const handleSelectAll = () => {
+    if (selectedLogs.length === logs.length) {
+      setSelectedLogs([]);
+    } else {
+      setSelectedLogs(logs.map((log) => log._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedLogs.length === 0) return;
+
+    if (!window.confirm(`Delete ${selectedLogs.length} stock logs?`)) return;
+
+    try {
+      await axios.post(`${BASE_URL}/api/stock-history/bulk-delete`, {
+        ids: selectedLogs,
+      });
+      toast.success("Selected stock logs deleted");
+      setSelectedLogs([]);
+      fetchStockHistory();
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      toast.error("Failed to delete selected logs");
+    }
   };
 
   return (
     <div className="page-wrapper">
-  <div className="content">
-    <div className="row">
-      <div className="col-xl-3 col-sm-6 col-12 d-flex">
-        <div className="card dash-widget w-100">
-          <div className="card-body d-flex align-items-center">
-            <div className="dash-widgetimg">
-              <span><img src="assets/img/icons/dash1.svg" alt="img" /></span>
-            </div>
-            <div className="dash-widgetcontent">
-              <h5 className="mb-1"><span className="counters" data-count={allTotals.totalQuantity}>{allTotals.totalQuantity}</span></h5>
-              <p className="mb-0">Total Quantity</p>
-              {/* <p className="mb-0">Total Purchase Due</p> */}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="col-xl-3 col-sm-6 col-12 d-flex">
-        <div className="card dash-widget dash1 w-100">
-          <div className="card-body d-flex align-items-center">
-            <div className="dash-widgetimg">
-              <span><img src="assets/img/icons/dash2.svg" alt="img" /></span>
-            </div>
-            <div className="dash-widgetcontent">
-              <h5 className="mb-1"><span className="counters" data-count={allTotals.totalReturnQty}>{allTotals.totalReturnQty}</span></h5>
-              <p className="mb-0">Total Return Qty</p>
-              {/* <p className="mb-0">Total Sales Due</p> */}
+      <div className="content">
+        <div className="row">
+          <div className="col-xl-3 col-sm-6 col-12 d-flex">
+            <div className="card dash-widget w-100">
+              <div className="card-body d-flex align-items-center">
+                <div className="dash-widgetimg">
+                  <span>
+                    <img src="assets/img/icons/dash1.svg" alt="img" />
+                  </span>
+                </div>
+                <div className="dash-widgetcontent">
+                  <h5 className="mb-1">
+                    <span
+                      className="counters"
+                      data-count={allTotals.totalQuantity}
+                    >
+                      {allTotals.totalQuantity}
+                    </span>
+                  </h5>
+                  <p className="mb-0">Total Quantity</p>
+                  {/* <p className="mb-0">Total Purchase Due</p> */}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      {/* <div className="col-xl-3 col-sm-6 col-12 d-flex">
+          <div className="col-xl-3 col-sm-6 col-12 d-flex">
+            <div className="card dash-widget dash1 w-100">
+              <div className="card-body d-flex align-items-center">
+                <div className="dash-widgetimg">
+                  <span>
+                    <img src="assets/img/icons/dash2.svg" alt="img" />
+                  </span>
+                </div>
+                <div className="dash-widgetcontent">
+                  <h5 className="mb-1">
+                    <span
+                      className="counters"
+                      data-count={allTotals.totalReturnQty}
+                    >
+                      {allTotals.totalReturnQty}
+                    </span>
+                  </h5>
+                  <p className="mb-0">Total Return Qty</p>
+                  {/* <p className="mb-0">Total Sales Due</p> */}
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* <div className="col-xl-3 col-sm-6 col-12 d-flex">
         <div className="card dash-widget dash2 w-100">
           <div className="card-body d-flex align-items-center">
             <div className="dash-widgetimg">
@@ -198,189 +280,260 @@ const ManageStock = () => {
           </div>
         </div>
       </div> */}
-      <div className="col-xl-3 col-sm-6 col-12 d-flex">
-        <div className="card dash-widget dash2 w-100">
-          <div className="card-body d-flex align-items-center">
-            <div className="dash-widgetimg">
-              <span><img src="assets/img/icons/dash3.svg" alt="img" /></span>
+          <div className="col-xl-3 col-sm-6 col-12 d-flex">
+            <div className="card dash-widget dash2 w-100">
+              <div className="card-body d-flex align-items-center">
+                <div className="dash-widgetimg">
+                  <span>
+                    <img src="assets/img/icons/dash3.svg" alt="img" />
+                  </span>
+                </div>
+                <div className="dash-widgetcontent">
+                  <h5 className="mb-1">
+                    ₹
+                    <span
+                      className="counters"
+                      data-count={allTotals.totalPrice.toFixed(2)}
+                    >
+                      {allTotals.totalPrice.toFixed(2)}
+                    </span>
+                  </h5>
+                  <p className="mb-0">Total Purchsae Amount</p>
+                </div>
+              </div>
             </div>
-            <div className="dash-widgetcontent">
-              <h5 className="mb-1">₹<span className="counters" data-count={allTotals.totalPrice.toFixed(2)}>{allTotals.totalPrice.toFixed(2)}</span></h5>
-              <p className="mb-0">Total Purchsae Amount</p>
+          </div>
+          <div className="col-xl-3 col-sm-6 col-12 d-flex">
+            <div className="card dash-widget dash3 w-100">
+              <div className="card-body d-flex align-items-center">
+                <div className="dash-widgetimg">
+                  <span>
+                    <img src="assets/img/icons/dash4.svg" alt="img" />
+                  </span>
+                </div>
+                <div className="dash-widgetcontent">
+                  <h5 className="mb-1">
+                    ₹
+                    <span
+                      className="counters"
+                      data-count={allTotals.totalReturnAmount.toFixed(2)}
+                    >
+                      {allTotals.totalReturnAmount.toFixed(2)}
+                    </span>
+                  </h5>
+                  <p className="mb-0">Total Return Amount</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div className="col-xl-3 col-sm-6 col-12 d-flex">
-        <div className="card dash-widget dash3 w-100">
-          <div className="card-body d-flex align-items-center">
-            <div className="dash-widgetimg">
-              <span><img src="assets/img/icons/dash4.svg" alt="img" /></span>
-            </div>
-            <div className="dash-widgetcontent">
-              <h5 className="mb-1">₹<span className="counters" data-count={allTotals.totalReturnAmount.toFixed(2)}>{allTotals.totalReturnAmount.toFixed(2)}</span></h5>
-              <p className="mb-0">Total Return Amount</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    
-    </div>
-    {/* Button trigger modal */}
-   
-    {/*  Purchase history */}
-      <div className="card">
+        {/* Button trigger modal */}
+
+        {/*  Purchase history */}
+        <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-              <div className="search-set">
-                  <div className="search-input">
-                      <input
-                          type="text"
-                          className="form-control "
-                          placeholder="Search Product"
-                          value={filters.productName}
-                          onChange={handleInputChange}
-                      />
-                  </div>
+            <div className="search-set">
+              <div className="search-input">
+                <input
+                  type="text"
+                  className="form-control "
+                  placeholder="Search Product"
+                  value={filters.productName}
+                  onChange={handleInputChange}
+                />
               </div>
-              <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-                  <div className="dropdown me-2">
-               <input
-                    type="date"
-                    name="startDate"
-                    className="form-control"
-                    value={filters.startDate}
-                    onChange={handleInputChange}
-                  />                      
-                  </div>
-                  <div className="dropdown me-2">
-                      <input
-                        type="date"
-                        name="endDate"
-                        className="form-control"
-                        value={filters.endDate}
-                        onChange={handleInputChange}
-                      />
-                  </div>
-                  
+            </div>
+            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
+              {selectedLogs.length > 0 && (
+                <button
+                  className="btn btn-danger me-2"
+                  onClick={handleBulkDelete}
+                >
+                  Delete Selected ({selectedLogs.length})
+                </button>
+              )}
+              <div className="dropdown me-2">
+                <input
+                  type="date"
+                  name="startDate"
+                  className="form-control"
+                  value={filters.startDate}
+                  onChange={handleInputChange}
+                />
               </div>
+              <div className="dropdown me-2">
+                <input
+                  type="date"
+                  name="endDate"
+                  className="form-control"
+                  value={filters.endDate}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
           </div>
           <div className="card-body p-0">
-              <div className="table-responsive">
-                  <table className="table datatable">
-                      <thead className="thead-light">
-                          <tr>
-                              <th className="no-sort">
-                                  <label className="checkboxs">
-                                      <input type="checkbox" id="select-all" />
-                                      <span className="checkmarks" />
-                                  </label>
-                              </th>
-                              <th>Product</th>
-                              <th>HSN Code</th>
-                              <th>Refrence</th>
-                              <th>Supplier</th>
-                               <th>Status</th>
-                              <th>Purchase Price</th>
-                              <th>Available  Qty</th>
-                              <th>Stock Value</th>
-                              <th className="no-sort" />
-                          </tr>
-                      </thead>
-                      <tbody>
+            <div className="table-responsive">
+              <table className="table datatable">
+                <thead className="thead-light">
+                  <tr>
+                    <th className="no-sort">
+                      <label className="checkboxs">
+                        <input
+                          type="checkbox"
+                          id="select-all"
+                          onChange={handleSelectAll}
+                          checked={
+                            logs.length > 0 &&
+                            selectedLogs.length === logs.length
+                          }
+                        />
+                        <span className="checkmarks" />
+                      </label>
+                    </th>
+                    <th>Product</th>
+                    <th>HSN Code</th>
+                    <th>Refrence</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th>Purchase Price</th>
+                    <th>Available Qty</th>
+                    <th>Stock Value</th>
+                    <th className="no-sort" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length > 0 ? (
+                    logs.map((log) => (
+                      <tr key={log._id}>
+                        <td>
+                          <label className="checkboxs">
+                            <input
+                              type="checkbox"
+                              checked={selectedLogs.includes(log._id)}
+                              onChange={() => handleSelectLog(log._id)}
+                            />
+                            <span className="checkmarks" />
+                          </label>
+                        </td>
 
-                          {logs.length > 0 ? (
-                              logs.map(log => (
-                                  <tr key={log._id}>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <a className="avatar avatar-md me-2">
+                              {log.product?.image && (
+                                <img
+                                  src={log.product?.image}
+                                  alt={log.productName}
+                                  className="media-image"
+                                />
+                              )}
+                            </a>
+                            <a>
+                              {log.product?.productName || log.name || "N/A"}
+                            </a>
+                          </div>
+                        </td>
 
-                                      <td>
-                                          <label className="checkboxs">
-                                              <input type="checkbox" />
-                                              <span className="checkmarks" />
-                                          </label>
-                                      </td>
-
-                                      <td>
-                                          <div className="d-flex align-items-center">
-                                              <a className="avatar avatar-md me-2">
-                                                  {log.product?.image && (
-                                                      <img src={log.product?.image} alt={log.productName} className="media-image" />
-                                                  )}
-                                              </a>
-                                              <a>{log.product?.productName || log.name || 'N/A'}</a>
-                                          </div>
-                                      </td>
-
-                                      <td>{log.product?.hsnCode}</td>
-                                      <td>{
-                                        log.notes && typeof log.notes === 'string'
-                                          ? (log.notes.match(/PUR-\d+/) ? log.notes.match(/PUR-\d+/)[0] : log.notes)
-                                          : '-'
-                                      }</td>
-                                      <td>{log.supplierName || '-'}</td>
-                                      <td>{log.type || "N/A"}</td>
-                                      <td>{log.priceChanged || '-'}</td>
-                                      <td>{log.quantityChanged || '-'} {log.unit}</td>
-                                      <td className='text-success'>{(Number(log.quantityChanged) * Number(log.priceChanged || 0)).toFixed(2)}</td>
-                                      <td className="d-flex">
-                                          <div className="d-flex align-items-center edit-delete-action">
-                                              <a className="me-2 border rounded d-flex align-items-center p-2" href="#" data-bs-toggle="modal" data-bs-target="#edit-stock">
-                                                  <TbEdit data-feather="edit" className="feather-edit" />
-                                              </a>
-                                              <a className="p-2 border rounded d-flex align-items-center"  data-bs-toggle="modal" data-bs-target="#delete">
-                                                  <TbTrash data-feather="trash-2" className="feather-trash-2" />
-                                              </a>
-                                          </div>
-                                      </td>
-                                  </tr>
-                              ))
-                          ) : (
-                              <tr>
-                                  <td colSpan="8" className="text-center">No products found.</td>
-                              </tr>
-                          )}
-
-
-                      </tbody>
-                  </table>
-              </div>
-              
+                        <td>{log.product?.hsnCode}</td>
+                        <td>
+                          {log.notes && typeof log.notes === "string"
+                            ? log.notes.match(/PUR-\d+/)
+                              ? log.notes.match(/PUR-\d+/)[0]
+                              : log.notes
+                            : "-"}
+                        </td>
+                        <td>{log.supplierName || "-"}</td>
+                        <td>{log.type || "N/A"}</td>
+                        <td>{log.priceChanged || "-"}</td>
+                        <td>
+                          {log.quantityChanged || "-"} {log.unit}
+                        </td>
+                        <td className="text-success">
+                          {(
+                            Number(log.quantityChanged) *
+                            Number(log.priceChanged || 0)
+                          ).toFixed(2)}
+                        </td>
+                        <td className="d-flex">
+                          <div className="d-flex align-items-center edit-delete-action">
+                            <a
+                              className="me-2 border rounded d-flex align-items-center p-2"
+                              href="#"
+                              data-bs-toggle="modal"
+                              data-bs-target="#edit-stock"
+                            >
+                              <TbEdit
+                                data-feather="edit"
+                                className="feather-edit"
+                              />
+                            </a>
+                            <a
+                              className="p-2 border rounded d-flex align-items-center"
+                              data-bs-toggle="modal"
+                              data-bs-target="#delete"
+                            >
+                              <TbTrash
+                                data-feather="trash-2"
+                                className="feather-trash-2"
+                              />
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center">
+                        No products found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-            {/* Pagination Controls */}
-<div className="d-flex justify-content-between align-items-center mb-0 p-2">
-<div>
-<span>Page {pagination.currentPage} of {pagination.totalPages}</span>
+          {/* Pagination Controls */}
+          <div className="d-flex justify-content-between align-items-center mb-0 p-2">
+            <div>
+              <span>
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </span>
+            </div>
+            <div>
+              <span>Total Record: {pagination.totalRecords}</span>
+            </div>
 
-</div>
-<div>
-<span>Total Record: {pagination.totalRecords}</span>
-</div>
-
-<div>
-<button className="btn btn-sm btn-outline-primary me-2" disabled={pagination.currentPage === 1} onClick={() => handlePageChange(pagination.currentPage - 1)}>Previous</button>
-                <button className="btn btn-sm btn-outline-primary" disabled={pagination.currentPage === pagination.totalPages} onClick={() => handlePageChange(pagination.currentPage + 1)}>Next</button>
-</div>
-
-</div>
+            <div>
+              <button
+                className="btn btn-sm btn-outline-primary me-2"
+                disabled={pagination.currentPage === 1}
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+              >
+                Previous
+              </button>
+              <button
+                className="btn btn-sm btn-outline-primary"
+                disabled={pagination.currentPage === pagination.totalPages}
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* Purchase history */}
       </div>
-    {/* Purchase history */}
-  </div>
+    </div>
+  );
+};
 
-</div>
-
-  )
-}
-
-export default ManageStock
-
-
-
+export default ManageStock;
 
 // // src/components/StockHistory.jsx
 // import React, { useEffect, useState } from "react";
 // import BASE_URL from "../../../../pages/config/config";
 // import axios from "axios"; // Make sure axios is imported
 // import { toast } from "react-toastify";
-
 
 // const StockHistory = () => {
 //   const [logs, setLogs] = useState([]);
@@ -464,7 +617,6 @@ export default ManageStock
 //   const handlePageChange = (page) => {
 //     setFilters({ ...filters, page });
 //   };
-
 
 //   const handleDelete = async (id) => {
 //     if (!window.confirm("Are you sure you want to delete this log?")) return;
@@ -631,7 +783,6 @@ export default ManageStock
 //                 </button>
 //               </td>
 
-
 //             </tr>
 //           ))}
 //         </tbody>
@@ -657,5 +808,3 @@ export default ManageStock
 // };
 
 // export default StockHistory;
-
-
