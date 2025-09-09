@@ -526,8 +526,6 @@
 
 // export default Category;
 
-
-
 import React, { useEffect, useState } from "react";
 import BASE_URL from "../../../pages/config/config";
 import axios from "axios";
@@ -537,11 +535,14 @@ import { toast } from "react-toastify";
 import CategoryModal from "../../../pages/Modal/categoryModals/CategoryModal";
 import DeleteAlert from "../../../utils/sweetAlert/DeleteAlert";
 import Swal from "sweetalert2";
-import { sanitizeInput } from "../../../utils/sanitize"
+import { sanitizeInput } from "../../../utils/sanitize";
+import { BiChevronDown } from "react-icons/bi";
+import { GrFormPrevious } from "react-icons/gr";
+import { MdNavigateNext } from "react-icons/md";
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import Papa from 'papaparse';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import Papa from "papaparse";
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -600,7 +601,8 @@ const Category = () => {
     e.preventDefault();
     let newErrors = {};
     if (!nameRegex.test(categoryName)) {
-      newErrors.categoryName = "Enter a valid category name (letters only, min 2 chars)";
+      newErrors.categoryName =
+        "Enter a valid category name (letters only, min 2 chars)";
     }
     // if(!slugRegex.test(categorySlug)) {
     //   newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
@@ -608,16 +610,15 @@ const Category = () => {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-
     try {
-      const cleanName = sanitizeInput(categoryName)
-      const cleanSlug = sanitizeInput(categorySlug)
+      const cleanName = sanitizeInput(categoryName);
+      const cleanSlug = sanitizeInput(categorySlug);
 
       const payload = { categoryName: cleanName };
-    if (cleanSlug && cleanSlug.trim() !== "") {
-      payload.categorySlug = cleanSlug;
+      if (cleanSlug && cleanSlug.trim() !== "") {
+        payload.categorySlug = cleanSlug;
       }
-      
+
       await axios.post(`${BASE_URL}/api/category/categories`, payload);
 
       toast.success("Category created successfully!");
@@ -640,10 +641,12 @@ const Category = () => {
 
     let newErrors = {};
     if (!nameRegex.test(editCategoryName)) {
-      newErrors.categoryName = "Enter a valid category name (letters only, min 2 chars)";
+      newErrors.categoryName =
+        "Enter a valid category name (letters only, min 2 chars)";
     }
     if (!slugRegex.test(editCategorySlug)) {
-      newErrors.categorySlug = "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
+      newErrors.categorySlug =
+        "Enter a valid slug (lowercase letters, numbers, hyphens, min 2 chars)";
     }
     setErrors(newErrors);
 
@@ -716,34 +719,30 @@ const Category = () => {
   //csv upload--------------------------------------------------------------------------------------------------------------------------------------------------
 
   const handleCSV = () => {
-  const tableHeader = [
-    "Category Code",
-    "Category",
-    "Category slug",
-    "Created On",
-  ];
-  const csvRows = [
-    tableHeader.join(","),
-    ...categories.map((e) => [
-    e.categoryCode,
-    e.categoryName,
-    e.categorySlug,
-    e.createdAt,
-    ].join(",")),
-  ];
-  const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const tableHeader = [
+      "Category Code",
+      "Category",
+      "Category slug",
+      "Created On",
+    ];
+    const csvRows = [
+      tableHeader.join(","),
+      ...categories.map((e) =>
+        [e.categoryCode, e.categoryName, e.categorySlug, e.createdAt].join(",")
+      ),
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
 
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "category.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "category.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-
-//excell file upload--------------------------------------------------------------------------------------------------------------------------------------------------
+  //excell file upload--------------------------------------------------------------------------------------------------------------------------------------------------
 
   const fileInputRef = React.useRef();
 
@@ -754,8 +753,8 @@ const Category = () => {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.name.endsWith('.xlsx')) {
-      alert('Please select a valid file');
+    if (!file.name.endsWith(".xlsx")) {
+      alert("Please select a valid file");
       return;
     }
     Papa.parse(file, {
@@ -763,66 +762,70 @@ const Category = () => {
       skipEmptyLines: true,
       complete: async (results) => {
         const requiredFields = [
-          'Category Code', 'Category', 'Category slug', 'Created On'
+          "Category Code",
+          "Category",
+          "Category slug",
+          "Created On",
         ];
-        const valid = results.data.every(row => requiredFields.every(f => f in row && row[f] !== ''));
+        const valid = results.data.every((row) =>
+          requiredFields.every((f) => f in row && row[f] !== "")
+        );
         if (!valid) {
-          alert('structure does not match the required schema.');
+          alert("structure does not match the required schema.");
           return;
         }
         // Optionally: convert types (grandTotal, orderTax, orderDiscount, shipping to Number, date to Date)
-        
+
         // Send to backend
         try {
           await axios.post(`${BASE_URL}/api/category/categories`, payload);
           toast.success("Imported successfully!");
-          
         } catch (err) {
-          alert('Error while Import');
+          alert("Error while Import");
         }
-      }
+      },
     });
   };
 
   //pdf download----------------------------------------------------------------------------------------------------------------------------------------
-  
-const handlePdf = () => {
-  const doc = new jsPDF();
-  doc.text("Category",14,15);
-  const tableColumns = [
-    "Category Code",
-    "Category",
-    "Category slug",
-    "Created On",
-  ];
 
-  const tableRows = categories.map((e) =>[
-    e.categoryCode,
-    e.categoryName,
-    e.categorySlug,
-    e.createdAt,
-  ]);
+  const handlePdf = () => {
+    const doc = new jsPDF();
+    doc.text("Category", 14, 15);
+    const tableColumns = [
+      "Category Code",
+      "Category",
+      "Category slug",
+      "Created On",
+    ];
 
-  autoTable(doc, {
-    head: [tableColumns],
-    body: tableRows,
-    startY: 20,
-    styles:{
-      fontSize: 8,
-    },
-    headStyles: {
-      fillColor: [155, 155, 155],
+    const tableRows = categories.map((e) => [
+      e.categoryCode,
+      e.categoryName,
+      e.categorySlug,
+      e.createdAt,
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumns],
+      body: tableRows,
+      startY: 20,
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [155, 155, 155],
         textColor: "white",
-    },
-    theme:"striped",
-  });
+      },
+      theme: "striped",
+    });
 
-  doc.save("categories.pdf");
-}
+    doc.save("categories.pdf");
+  };
 
   return (
     <div className="page-wrapper">
-      <div className="content" style={{marginTop:'50px'}}>
+      <div className="content" style={{ marginTop: "50px" }}>
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
@@ -846,18 +849,45 @@ const handlePdf = () => {
       </ul> */}
           <div className="table-top-head me-2">
             <li>
-              <button type="button" className="icon-btn" title="Pdf" onClick={handlePdf}>
+              <button
+                type="button"
+                className="icon-btn"
+                title="Pdf"
+                onClick={handlePdf}
+              >
                 <FaFilePdf />
               </button>
             </li>
             <li>
               <label className="icon-btn m-0" title="Import Excel">
-                <button type="button" onClick={handleImportClick} style={{backgroundColor:'white', display:'flex', alignItems:'center', border:'none'}}><FaFileExcel style={{color:'green'}} /></button>
-                <input type="file" accept=".xlsx, .xls" ref={fileInputRef} style={{display:'none'}} onChange={handleFileChange} />
+                <button
+                  type="button"
+                  onClick={handleImportClick}
+                  style={{
+                    backgroundColor: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    border: "none",
+                  }}
+                >
+                  <FaFileExcel style={{ color: "green" }} />
+                </button>
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  onChange={handleFileChange}
+                />
               </label>
             </li>
             <li>
-              <button type="button" className="icon-btn" title="Export Excel" onClick={handleCSV}>
+              <button
+                type="button"
+                className="icon-btn"
+                title="Export Excel"
+                onClick={handleCSV}
+              >
                 <FaFileExcel />
               </button>
             </li>
@@ -949,7 +979,7 @@ const handlePdf = () => {
             <div className="table-responsive">
               <table className="table datatable">
                 <thead className="thead-light">
-                  <tr style={{ textAlign: 'center' }}>
+                  <tr style={{ textAlign: "center" }}>
                     <th className="no-sort">
                       <label className="checkboxs">
                         <input
@@ -962,10 +992,16 @@ const handlePdf = () => {
                           }
                           onChange={(e) => {
                             if (e.target.checked) {
-                              const newIds = paginatedCategories.map((cat) => cat._id);
-                              setSelectedCategories((prev) => [...new Set([...prev, ...newIds])]);
+                              const newIds = paginatedCategories.map(
+                                (cat) => cat._id
+                              );
+                              setSelectedCategories((prev) => [
+                                ...new Set([...prev, ...newIds]),
+                              ]);
                             } else {
-                              const idsToRemove = paginatedCategories.map((cat) => cat._id);
+                              const idsToRemove = paginatedCategories.map(
+                                (cat) => cat._id
+                              );
                               setSelectedCategories((prev) =>
                                 prev.filter((id) => !idsToRemove.includes(id))
                               );
@@ -986,15 +1022,20 @@ const handlePdf = () => {
                 <tbody>
                   {paginatedCategories.length > 0 ? (
                     paginatedCategories.map((category) => (
-                      <tr key={category._id} style={{ textAlign: 'center' }}>
+                      <tr key={category._id} style={{ textAlign: "center" }}>
                         <td>
                           <label className="checkboxs">
                             <input
                               type="checkbox"
-                              checked={selectedCategories.includes(category._id)}
+                              checked={selectedCategories.includes(
+                                category._id
+                              )}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedCategories((prev) => [...prev, category._id]);
+                                  setSelectedCategories((prev) => [
+                                    ...prev,
+                                    category._id,
+                                  ]);
                                 } else {
                                   setSelectedCategories((prev) =>
                                     prev.filter((id) => id !== category._id)
@@ -1073,61 +1114,75 @@ const handlePdf = () => {
               </table>
             </div>
             {/* pagination */}
-            <div className="d-flex justify-content-between align-items-center p-3">
+           
               {/* <div>
             Showing {indexOfFirstItem + 1}-
             {Math.min(indexOfLastItem, filteredCategories.length)} of{" "}
             {filteredCategories.length}
           </div> */}
-              <div className="d-flex justify-content-end align-items-center">
-                <label className="me-2">Items per page:</label>
+              <div
+                className="d-flex justify-content-end gap-3"
+                style={{ padding: "10px 20px" }}
+              >
                 <select
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1); // reset to first page
+                    setCurrentPage(1);
                   }}
                   className="form-select w-auto"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <option value={10}>10 Per Page</option>
+                  <option value={25}>25 Per Page</option>
+                  <option value={50}>50 Per Page</option>
+                  <option value={100}>100 Per Page</option>
                 </select>
-              </div>
-              <div>
-                <button
-                  className="btn btn-light btn-sm me-2"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
+                <span
+                  style={{
+                    backgroundColor: "white",
+                    boxShadow: "rgb(0 0 0 / 4%) 0px 3px 8px",
+                    padding: "7px",
+                    borderRadius: "5px",
+                    border: "1px solid #e4e0e0ff",
+                    color: "gray",
+                  }}
                 >
-                  Prev
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => (
+                  {filteredCategories.length === 0
+                    ? "0 of 0"
+                    : `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(
+                        currentPage * itemsPerPage,
+                        filteredCategories.length
+                      )} of ${filteredCategories.length}`}
                   <button
-                    key={i}
-                    className={`btn btn-sm me-1 ${currentPage === i + 1 ? "btn-primary" : "btn-outline-primary"
-                      }`}
-                    onClick={() => setCurrentPage(i + 1)}
+                    style={{
+                      border: "none",
+                      color: "grey",
+                      backgroundColor: "white",
+                    }}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
                   >
-                    {i + 1}
+                    <GrFormPrevious />
+                  </button>{" "}
+                  <button
+                    style={{ border: "none", backgroundColor: "white" }}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <MdNavigateNext />
                   </button>
-                ))}
-                <button
-                  className="btn btn-light btn-sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
+                </span>
               </div>
-            </div>
+
+              {/* rece */}
+            
           </div>
         </div>
         {/* /product list */}
-
       </div>
       {/* <CategoryModal
         modalId="categoryModal"
@@ -1168,10 +1223,8 @@ const handlePdf = () => {
         submitLabel={isEditMode ? "Update" : "Submit"}
         errors={errors}
       />
-
     </div>
   );
 };
 
 export default Category;
-

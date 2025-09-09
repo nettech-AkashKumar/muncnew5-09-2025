@@ -230,7 +230,7 @@ const Role = () => {
 
   const handleViewPermissions = (roleName) => {
     localStorage.setItem("selectedRoleName", roleName);
-    window.location.href = "/permissions"; // direct navigation without route param
+    navigate("/permissions");
   };
 
   return (
