@@ -317,7 +317,6 @@ useEffect(() => {
               </table>
             </div>
             {/* pagination */}
-            <div className="d-flex justify-content-between align-items-center p-3">
               <div className="d-flex justify-content-end align-items-center">
                 <label className="me-2">Items per page:</label>
                 <select
@@ -330,7 +329,6 @@ useEffect(() => {
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                 </select>
-              </div>
               <div>
                 <button
                   className="btn btn-light btn-sm me-2"
@@ -356,7 +354,7 @@ useEffect(() => {
                   Next
                 </button>
               </div>
-            </div>
+              </div>
           </div>
         </div>
         <AddHsnModals

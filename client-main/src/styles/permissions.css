@@ -1,4 +1,4 @@
-.switch {
+/* .switch {
   position: relative;
   display: inline-block;
   width: 46px;
@@ -38,4 +38,66 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(22px);
+} */
+ /* Table look */
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px;
+}
+
+/* Header row */
+.table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Checkbox style */
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Optional: nicer blue when checked */
+input[type="checkbox"]:checked {
+  accent-color: #007bff; /* modern browsers */
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+.roleshder {
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 14px;
+  color: #262626;
+}
+.cntner {
+  border-radius: 8px;
+  padding: 14px 16px 14px 16px;
+  border: 1px solid #E6E6E6;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  background-color: #FFFFFF;
+}
+.slctlble {
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 14px;
+  color: #262626;
+}
+.slctlblechose {
+  border: 1px solid #C2C2C2;
+  padding: 10px 16px 10px 16px;
+  background-color: #FBFBFB;
+  border-radius: 8px;
 }
