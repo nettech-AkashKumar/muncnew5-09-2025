@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom'
 
 const MailPage = () => {
   return (
-    <div >
+    <div>
       <Sidebar />
       <Outlet />
     </div>

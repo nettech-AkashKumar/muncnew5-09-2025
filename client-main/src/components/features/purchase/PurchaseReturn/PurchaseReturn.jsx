@@ -12,6 +12,8 @@ const PurchaseReturn = () => {
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [selectedReturns, setSelectedReturns] = useState([]);
+
 
 
   console.log("BASE_URL", debitNotes);
@@ -44,6 +46,41 @@ const PurchaseReturn = () => {
     setPage(1); // reset page
   };
 
+  const handleSelectReturn = (id) => {
+  setSelectedReturns((prev) =>
+    prev.includes(id) ? prev.filter((rid) => rid !== id) : [...prev, id]
+  );
+};
+
+const handleSelectAll = () => {
+  if (selectedReturns.length === debitNotes.length) {
+    setSelectedReturns([]);
+  } else {
+    setSelectedReturns(debitNotes.map((note) => note._id));
+  }
+};
+const handleBulkDelete = async () => {
+  if (selectedReturns.length === 0) return;
+
+  if (!window.confirm(`Delete ${selectedReturns.length} purchase returns?`)) return;
+
+  try {
+    await Promise.all(
+      selectedReturns.map((id)=> 
+        axios.post(`${BASE_URL}/api/debit-notes/bulk-delete/${id}`)
+      )
+    ) 
+    // axios.post(`${BASE_URL}/api/debit-notes/bulk-delete`, {
+    //   ids: selectedReturns,
+    // });
+    setSelectedReturns([]);
+    fetchDebitNotes(); // refresh table
+  } catch (error) {
+    console.error("Bulk delete failed:", error);
+  }
+};
+
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -55,6 +92,13 @@ const PurchaseReturn = () => {
             </div>
           </div>
           <ul className="table-top-head">
+            {selectedReturns.length > 0 && (
+    <li>
+      <button className="btn btn-danger" onClick={handleBulkDelete}>
+        Delete Selected ({selectedReturns.length})
+      </button>
+    </li>
+  )}
             <li>
               <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf"><img src="assets/img/icons/pdf.svg" alt="img" /></a>
             </li>
@@ -130,7 +174,9 @@ const PurchaseReturn = () => {
                     <tr>
                       <th>
                         <label className="checkboxs">
-                          <input type="checkbox" id="select-all" />
+                          <input type="checkbox" id="select-all"  onChange={handleSelectAll}
+          checked={debitNotes.length > 0 && selectedReturns.length === debitNotes.length}
+       />
                           <span className="checkmarks" />
                         </label>
                       </th>
@@ -152,7 +198,8 @@ const PurchaseReturn = () => {
                         <tr>
                           <td>
                             <label className="checkboxs">
-                              <input type="checkbox" />
+                              <input type="checkbox"  checked={selectedReturns.includes(note._id)}
+            onChange={() => handleSelectReturn(note._id)}/>
                               <span className="checkmarks" />
                             </label>
                           </td>

@@ -28,6 +28,9 @@ const PurchaseOrder = () => {
   const [totalPages, setTotalPages] = useState(1);
   const { settings } = useSettings();
 
+const [selectedPurchases, setSelectedPurchases] = useState([]);
+
+
   const fetchPurchases = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/purchases`, {
@@ -107,6 +110,44 @@ const PurchaseOrder = () => {
     returnModal.show();
   };
 
+  // NEW: Handle single checkbox
+const handleCheckboxChange = (id) => {
+  setSelectedPurchases((prev) =>
+    prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+  );
+};
+
+// NEW: Handle select all
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = purchases.map((p) => p._id);
+    setSelectedPurchases(allIds);
+  } else {
+    setSelectedPurchases([]);
+  }
+};
+
+// NEW: Bulk delete selected purchases
+const handleBulkDelete = async () => {
+  if (selectedPurchases.length === 0) return;
+  if (!window.confirm(`Delete ${selectedPurchases.length} purchase orders?`)) return;
+
+  try {
+    await Promise.all(
+      selectedPurchases.map((id) =>
+        axios.delete(`${BASE_URL}/api/purchases/${id}`)
+      )
+    );
+    setSelectedPurchases([]); // clear selection
+    fetchPurchases(); // refresh
+    Swal.fire("Deleted!", "Selected purchase orders have been deleted.", "success");
+  } catch (error) {
+    console.error("Bulk delete failed:", error);
+    Swal.fire("Error", "Failed to delete selected purchases.", "error");
+  }
+};
+
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -118,6 +159,13 @@ const PurchaseOrder = () => {
             </div>
           </div>
           <div className="table-top-head me-2">
+            <li>{/* NEW: Bulk delete button - only shows when >0 selected */}
+{selectedPurchases.length > 0 && (
+  <button className="btn btn-danger ms-2" onClick={handleBulkDelete}>
+    Delete ({selectedPurchases.length}) Selected
+  </button>
+)}
+</li>
             <li><button type="button" className="icon-btn" title="Pdf"><FaFilePdf /></button></li>
             <li><label className="icon-btn m-0" title="Import Excel"><input type="file" accept=".xlsx, .xls" hidden /><FaFileExcel style={{ color: "green" }} /></label></li>
             <li><button type="button" className="icon-btn" title="Export Excel"><FaFileExcel /></button></li>
@@ -163,7 +211,11 @@ const PurchaseOrder = () => {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input type="checkbox" id="select-all" checked={
+    selectedPurchases.length > 0 &&
+    selectedPurchases.length === purchases.length
+  }
+  onChange={handleSelectAll} />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -189,7 +241,8 @@ const PurchaseOrder = () => {
                       <tr>
                         <td>
                           <label className="checkboxs">
-                            <input type="checkbox" />
+                            <input type="checkbox" checked={selectedPurchases.includes(purchase._id)}
+  onChange={() => handleCheckboxChange(purchase._id)} />
                             <span className="checkmarks" />
                           </label>
                         </td>

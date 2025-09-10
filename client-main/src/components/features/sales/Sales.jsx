@@ -406,6 +406,9 @@ const Sales = () => {
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  // NEW: track selected sales
+const [selectedSales, setSelectedSales] = useState([]);
+
 
   console.log("salessss", sales);
 
@@ -466,6 +469,37 @@ const Sales = () => {
     // Modal will open via React conditional rendering below
   };
 
+  // NEW: handle single select
+const handleSelectSale = (id) => {
+  setSelectedSales((prev) =>
+    prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+  );
+};
+
+// NEW: handle select all
+const handleSelectAll = () => {
+  if (selectedSales.length === sales.length) {
+    setSelectedSales([]);
+  } else {
+    setSelectedSales(sales.map((s) => s._id));
+  }
+};
+// NEW: bulk delete
+const handleBulkDelete = async () => {
+  if (selectedSales.length === 0) return;
+  if (!window.confirm(`Delete ${selectedSales.length} sales?`)) return;
+
+  try {
+    // await axios.delete(`${BASE_URL}/api/sales/ ${  selectedSales }`);
+      await axios.delete(`${BASE_URL}/api/sales/${selectedSales}`);
+    setSelectedSales([]);
+    fetchSales();
+  } catch (err) {
+    alert("Failed to delete selected sales");
+  }
+};
+
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -478,6 +512,13 @@ const Sales = () => {
             </div>
           </div>
           <ul className="table-top-head">
+            <li>{/* NEW: bulk delete button */}
+{selectedSales.length > 0 && (
+  <button className="btn btn-danger me-2" onClick={handleBulkDelete}>
+    Delete Selected ({selectedSales.length})
+  </button>
+)}
+</li>
             <li>
               <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf"><img src="assets/img/icons/pdf.svg" alt="img" /></a>
             </li>
@@ -571,7 +612,8 @@ const Sales = () => {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input type="checkbox" id="select-all"  onChange={handleSelectAll}
+  checked={sales.length > 0 && selectedSales.length === sales.length} />
                         <span className="checkmarks" />
                       </label>
                     </th>
@@ -595,7 +637,8 @@ const Sales = () => {
                       <tr key={sale._id}>
                         <td>
                           <label className="checkboxs">
-                            <input type="checkbox" />
+                            <input type="checkbox"   checked={selectedSales.includes(sale._id)}
+  onChange={() => handleSelectSale(sale._id)}/>
                             <span className="checkmarks" />
                           </label>
                         </td>

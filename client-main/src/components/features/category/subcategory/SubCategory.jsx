@@ -9,6 +9,8 @@ import { FiXSquare } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { sanitizeInput } from "../../../../utils/sanitize";
 import axios from "axios";
+import { GrFormPrevious } from "react-icons/gr";
+import { MdNavigateNext } from "react-icons/md";
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -556,57 +558,63 @@ const SubCategory = () => {
                 </tbody>
               </table>
             </div>
-            <div className="d-flex justify-content-between align-items-center p-3">
-              <div className="d-flex justify-content-end align-items-center">
-                <label className="me-2">Items per page:</label>
+            <div
+                className="d-flex justify-content-end gap-3"
+                style={{ padding: "10px 20px" }}
+              >
                 <select
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1); // reset to first page
+                    setCurrentPage(1);
                   }}
                   className="form-select w-auto"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <option value={10}>10 Per Page</option>
+                  <option value={25}>25 Per Page</option>
+                  <option value={50}>50 Per Page</option>
+                  <option value={100}>100 Per Page</option>
                 </select>
-              </div>
-              <div>
-                <button
-                  className="btn btn-light btn-sm me-2"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
+                <span
+                  style={{
+                    backgroundColor: "white",
+                    boxShadow: "rgb(0 0 0 / 4%) 0px 3px 8px",
+                    padding: "7px",
+                    borderRadius: "5px",
+                    border: "1px solid #e4e0e0ff",
+                    color: "gray",
+                  }}
                 >
-                  Prev
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => (
+                  {filteredSubCategories.length === 0
+                    ? "0 of 0"
+                    : `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(
+                      currentPage * itemsPerPage,
+                      filteredSubCategories.length
+                    )} of ${filteredSubCategories.length}`}
                   <button
-                    key={i}
-                    className={`btn btn-sm me-1 ${
-                      currentPage === i + 1
-                        ? "btn-primary"
-                        : "btn-outline-primary"
-                    }`}
-                    onClick={() => setCurrentPage(i + 1)}
+                    style={{
+                      border: "none",
+                      color: "grey",
+                      backgroundColor: "white",
+                    }}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
                   >
-                    {i + 1}
+                    <GrFormPrevious />
+                  </button>{" "}
+                  <button
+                    style={{ border: "none", backgroundColor: "white" }}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <MdNavigateNext />
                   </button>
-                ))}
-                <button
-                  className="btn btn-light btn-sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
+                </span>
               </div>
-            </div>
           </div>
         </div>
         {/* /product list */}

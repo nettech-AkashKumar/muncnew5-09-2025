@@ -51,6 +51,9 @@ function AllCustomers({ onClose }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFilters, setShowFilters] = React.useState(false);
 
+  const [selectedCustomers, setSelectedCustomers] = useState([]); 
+
+
 
   useEffect(() => {
     fetchCustomers();
@@ -172,11 +175,55 @@ function AllCustomers({ onClose }) {
   //     setLoading(false);
   //   }
   // };
+
+  // ✅ NEW
+const handleCheckboxChange = (id) => {
+  setSelectedCustomers((prev) =>
+    prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
+  );
+};
+
+// ✅ NEW
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    const allIds = customers.map((c) => c._id);
+    setSelectedCustomers(allIds);
+  } else {
+    setSelectedCustomers([]);
+  }
+};
+
+// ✅ NEW
+const handleBulkDelete = async () => {
+  if (selectedCustomers.length === 0) return;
+  if (!window.confirm(`Delete ${selectedCustomers.length} customers?`)) return;
+
+  try {
+    await Promise.all(
+      selectedCustomers.map((id) =>
+        axios.delete(`${BASE_URL}/api/customers/${id}`)
+      )
+    );
+    setSelectedCustomers([]); // clear selection
+    fetchCustomers(); // refresh list
+  } catch (err) {
+    alert("Failed to delete selected customers.");
+  }
+};
+
+
   return (
     <div className="page-wrapper p-4 shadow rounded bg-white">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h5 className="fw-bold">All Customers</h5>
         <div className="d-flex gap-2">
+          {/* ✅ NEW: Show delete button only if customers are selected */}
+{selectedCustomers.length > 0 && (
+  <button className="btn btn-danger" onClick={handleBulkDelete}>
+    Delete ({selectedCustomers.length}) Selected
+  </button>
+)}
+
           <button className="btn btn-outline-secondary">
             <FaDownload className="me-1" /> Export
           </button>
@@ -241,7 +288,11 @@ function AllCustomers({ onClose }) {
           <thead className="table-light">
             <tr>
               <th>
-                <input type="checkbox" />
+                <input type="checkbox" checked={
+    selectedCustomers.length > 0 &&
+    selectedCustomers.length === customers.length
+  }
+  onChange={handleSelectAll} />
               </th>
               <th>Customer Name</th>
               <th>Address</th>
@@ -255,7 +306,8 @@ function AllCustomers({ onClose }) {
             {customers.map((customer, index) => (
               <tr key={index} style={{ cursor: "pointer" }}>
                 <td>
-                  <input type="checkbox" />
+                  <input type="checkbox" checked={selectedCustomers.includes(customer._id)}
+  onChange={() => handleCheckboxChange(customer._id)} />
                 </td>
                 <td className="" onClick={() => handleCustomerClick(customer)}>
                   <img
