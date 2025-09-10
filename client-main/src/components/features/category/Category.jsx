@@ -542,6 +542,7 @@ import { sanitizeInput } from "../../../utils/sanitize"
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -755,33 +756,54 @@ const Category = () => {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.name.endsWith('.xlsx')) {
-      alert('Please select a valid file');
+      alert('Please select a valid .xlsx file');
+      e.target.value = '';
       return;
     }
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const requiredFields = [
-          'Category Code', 'Category', 'Category slug', 'Created On'
-        ];
-        const valid = results.data.every(row => requiredFields.every(f => f in row && row[f] !== ''));
-        if (!valid) {
-          alert('structure does not match the required schema.');
-          return;
-        }
-        // Optionally: convert types (grandTotal, orderTax, orderDiscount, shipping to Number, date to Date)
-        
-        // Send to backend
-        try {
-          await axios.post(`${BASE_URL}/api/category/categories`, payload);
-          toast.success("Imported successfully!");
-          
-        } catch (err) {
-          alert('Error while Import');
-        }
+
+    try {
+      // Read Excel file
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0]; // Assume first sheet
+      const worksheet = workbook.Sheets[sheetName];
+
+      // Convert to JSON (array of objects with headers as keys)
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: true, defval: '' });
+
+      // Validate: Check required fields exist and are non-empty
+      const requiredFields = ['categoryName', 'categorySlug', 'categoryCode'];
+      const valid = data.every(row => 
+        requiredFields.every(field => field in row && row[field] !== '' && row[field] != null)
+      );
+
+      if (!valid || data.length === 0) {
+        alert('File structure does not match the required schema.');
+        e.target.value = '';
+        return;
       }
-    });
+
+      // Construct payload to match MongoDB schema
+      const payload = data.map(row => ({
+        categoryName: String(row.categoryName).trim(),
+        categorySlug: String(row.categorySlug).trim(),
+        categoryCode: String(row.categoryCode).trim(),
+        subcategories: []
+      }));
+
+      console.log('Sending Payload:', payload); // Debug: Inspect in console
+
+      // Send to backend
+      await axios.post(`${BASE_URL}/api/category/categories`, payload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      toast.success('Imported successfully!');
+    } catch (err) {
+      console.error('Import Error:', err.response?.data || err.message || err);
+      alert('Error while Import: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally {
+      e.target.value = ''; // Clear input
+    }
   };
 
   //pdf download----------------------------------------------------------------------------------------------------------------------------------------
@@ -853,7 +875,7 @@ const handlePdf = () => {
             <li>
               <label className="icon-btn m-0" title="Import Excel">
                 <button type="button" onClick={handleImportClick} style={{backgroundColor:'white', display:'flex', alignItems:'center', border:'none'}}><FaFileExcel style={{color:'green'}} /></button>
-                <input type="file" accept=".xlsx, .xls" ref={fileInputRef} style={{display:'none'}} onChange={handleFileChange} />
+                <input type="file" accept=".xlsx" ref={fileInputRef} style={{display:'none'}} onChange={handleFileChange} />
               </label>
             </li>
             <li>
