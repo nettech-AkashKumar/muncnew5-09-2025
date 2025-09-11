@@ -15,7 +15,9 @@ const Invoice = () => {
     const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-      const navigate = useNavigate();
+    const [selectedInvoices, setSelectedInvoices] = useState([]); // ✅ NEW - store selected invoices
+
+    const navigate = useNavigate();
 
 
     console.log("Invoices data:", invoices); // Debugging line
@@ -63,6 +65,42 @@ const Invoice = () => {
     // Pagination controls
     const totalPages = Math.ceil(total / limit);
 
+    //  NEW - handle selecting/deselecting individual invoice
+    const toggleSelectInvoice = (invoiceId) => {
+        setSelectedInvoices(prev =>
+            prev.includes(invoiceId)
+                ? prev.filter(id => id !== invoiceId)
+                : [...prev, invoiceId]
+        );
+    };
+
+    //  NEW - handle select all
+    const toggleSelectAll = () => {
+        if (selectedInvoices.length === invoices.length) {
+            setSelectedInvoices([]);
+        } else {
+            const allIds = invoices.map(row => row.invoice?.invoiceId || row.sale?.invoiceId);
+            setSelectedInvoices(allIds);
+        }
+    };
+
+    //  NEW - delete multiple invoices
+    const handleBulkDelete = async () => {
+        if (selectedInvoices.length === 0) return;
+        if (!window.confirm(`Are you sure you want to delete ${selectedInvoices.length} invoices?`)) return;
+
+        try {
+            await axios.post('/api/invoice/allinvoice', { ids: selectedInvoices });
+            setSelectedInvoices([]);
+            fetchInvoices(); // refresh table
+        } catch (err) {
+            console.error('Bulk delete failed:', err);
+        }
+    };
+
+
+
+
     return (
         <div className="page-wrapper">
             <div className="content">
@@ -71,6 +109,16 @@ const Invoice = () => {
                         <div className="page-title">
                             <h4>Invoices</h4>
                             <h6>Manage your stock invoices.</h6>
+                            {/* ✅ NEW - show only when some invoices are selected */}
+                            {selectedInvoices.length > 0 && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="btn btn-danger ms-2 "
+                                >
+                                    Delete Selected ({selectedInvoices.length})
+                                </button>
+                            )}
+
                         </div>
                     </div>
                     {/* ...existing code... */}
@@ -129,7 +177,8 @@ const Invoice = () => {
                                     <tr>
                                         <th className="no-sort">
                                             <label className="checkboxs">
-                                                <input type="checkbox" id="select-all" />
+                                                <input type="checkbox" id="select-all" checked={selectedInvoices.length === invoices.length && invoices.length > 0}
+                                                    onChange={toggleSelectAll} />
                                                 <span className="checkmarks" />
                                             </label>
                                         </th>
@@ -157,11 +206,12 @@ const Invoice = () => {
                                                 <tr key={inv._id || idx}>
                                                     <td>
                                                         <label className="checkboxs">
-                                                            <input type="checkbox" />
+                                                            <input type="checkbox" checked={selectedInvoices.includes(inv.invoiceId || sale.invoiceId)}
+                                                                onChange={() => toggleSelectInvoice(inv.invoiceId || sale.invoiceId)} />
                                                             <span className="checkmarks" />
                                                         </label>
                                                     </td>
-                                                    <td><a  onClick={() => navigate(`/invoice/${sale.invoiceId}`)} >{inv.invoiceId || sale.invoiceId}</a></td>
+                                                    <td><a onClick={() => navigate(`/invoice/${sale.invoiceId}`)} >{inv.invoiceId || sale.invoiceId}</a></td>
                                                     <td>
                                                         <div className="d-flex align-items-center">
                                                             <span>{(inv.customer?.name || sale.customer?.name || inv.customer?._id || sale.customer?._id || "-")}</span>
