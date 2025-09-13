@@ -56,7 +56,7 @@
 //       setCityList(City.getCitiesOfState(selectedCountry, selectedState));
 //     }
 //   }, [selectedState]);
-  
+
 //   // State for import status and message
 //   const [isImported, setIsImported] = useState(false);
 //   const [showMessage, setShowMessage] = useState(false);
@@ -1255,7 +1255,7 @@ import sanitizeHtml from 'sanitize-html';
 
 // Regex patterns for validation
 const VALIDATION_PATTERNS = {
-  warehouseName: /^[a-zA-Z0-9\s\-_]{3,50}$/,
+  warehouseName: /^[a-zA-Z\s\-_]{3,50}$/,
   phone: /^\+?[1-9]\d{1,14}$/,
   warehouseCode: /^[A-Z0-9]{3,10}$/,
   warehouseOwner: /^[a-zA-Z\s]{2,50}$/,
@@ -1423,7 +1423,7 @@ function AddWarehouse() {
     //     zones: mainZones,
     //   },
     // };
-     const warehouseData = {
+    const warehouseData = {
       warehouseName: sanitizeHtml(warehouseName, SANITIZE_CONFIG),
       phone: sanitizeHtml(phone, SANITIZE_CONFIG),
       warehouseCode: sanitizeHtml(warehouseCode, SANITIZE_CONFIG),
@@ -1762,7 +1762,7 @@ function AddWarehouse() {
         padding: "100px",
         backgroundColor: "#F9FAFB",
         minHeight: "100vh",
-        marginTop:"-20px"
+        marginTop: "-20px"
       }}
     >
       {/* Success Message */}
@@ -1837,13 +1837,13 @@ function AddWarehouse() {
                 type="text"
                 value={warehouseName}
                 // onChange={(e) => setWarehouseName(e.target.value)}
-                 onChange={handleInputChange(setWarehouseName, 'warehouseName')}
+                onChange={handleInputChange(setWarehouseName, 'warehouseName')}
                 style={{
                   width: "100%",
                   padding: "12px",
                   borderRadius: "8px",
                   // border: "1px solid #D1D5DB",
-                   border: `1px solid ${errors.warehouseName ? '#EF4444' : '#D1D5DB'}`,
+                  border: `1px solid ${errors.warehouseName ? '#EF4444' : '#D1D5DB'}`,
                   backgroundColor: "#F9FAFB",
                   color: "#6B7280",
                   fontSize: "14px",
@@ -1880,7 +1880,7 @@ function AddWarehouse() {
                   padding: "12px",
                   borderRadius: "8px",
                   // border: "1px solid #D1D5DB",
-                   border: `1px solid ${errors.phone ? '#EF4444' : '#D1D5DB'}`,
+                  border: `1px solid ${errors.phone ? '#EF4444' : '#D1D5DB'}`,
                   backgroundColor: "#F9FAFB",
                   color: "#6B7280",
                   fontSize: "14px",
@@ -1913,13 +1913,13 @@ function AddWarehouse() {
                 type="text"
                 value={warehouseCode}
                 // onChange={(e) => setWarehouseCode(e.target.value)}
-                 onChange={handleInputChange(setWarehouseCode, 'warehouseCode')}
+                onChange={handleInputChange(setWarehouseCode, 'warehouseCode')}
                 style={{
                   width: "100%",
                   padding: "12px",
                   borderRadius: "8px",
                   // border: "1px solid #D1D5DB",
-                   border: `1px solid ${errors.warehouseCode ? '#EF4444' : '#D1D5DB'}`,
+                  border: `1px solid ${errors.warehouseCode ? '#EF4444' : '#D1D5DB'}`,
                   backgroundColor: "#F9FAFB",
                   color: "#6B7280",
                   fontSize: "14px",
@@ -1955,7 +1955,7 @@ function AddWarehouse() {
                   padding: "12px",
                   borderRadius: "8px",
                   // border: "1px solid #D1D5DB",
-                   border: `1px solid ${errors.warehouseOwner ? '#EF4444' : '#D1D5DB'}`,
+                  border: `1px solid ${errors.warehouseOwner ? '#EF4444' : '#D1D5DB'}`,
                   backgroundColor: "#F9FAFB",
                   color: "#6B7280",
                   fontSize: "14px",
